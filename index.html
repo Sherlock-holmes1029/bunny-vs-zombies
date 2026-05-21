@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bunny vs. Undead: Survival</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #030712; touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Outfit', sans-serif; }
+        canvas { display: block; width: 100vw; height: 100vh; image-rendering: pixelated; }
+        
+        /* Mobile Control Styles */
+        .mobile-btn {
+            background: rgba(17, 24, 39, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 800;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            transition: transform 0.05s, background-color 0.05s, border-color 0.05s;
+        }
+        .mobile-btn:active { background: #10B981; border-color: #10B981; transform: scale(0.9); }
+        .weapon-slot { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; touch-action: manipulation; }
+        .weapon-slot:hover { transform: translateY(-2px); }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(31, 41, 55, 0.5); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #10B981; border-radius: 4px; }
+        
+        /* Premium HUD elements */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Perk cards styling */
+        .perk-card {
+            background: linear-gradient(135deg, rgba(31, 41, 55, 0.6) 0%, rgba(17, 24, 39, 0.85) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .perk-card:hover {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.15);
+            transform: translateY(-6px);
+        }
+
+        /* Pulse Animation */
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.02); }
+        }
+        .pulse-soft { animation: pulse-soft 2s infinite ease-in-out; }
+    </style>
+</head>
+<body class="text-white font-sans antialiased">
+
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI Overlay (HUD) -->
+    <div id="ui-hud" class="fixed top-0 left-0 w-full h-full pointer-events-none p-4 flex flex-col justify-between z-10">
+        <!-- Top-Center Combo Indicator -->
+        <div id="hud-combo-panel" class="absolute top-4 left-1/2 transform -translate-x-1/2 glass-panel px-4 py-2 rounded-2xl flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 pointer-events-none min-w-[140px]">
+            <span class="text-[9px] uppercase tracking-widest text-orange-400 font-bold">Rage Combo</span>
+            <span class="text-2xl font-black text-white"><span id="hud-combo-count">0</span>x</span>
+            <div class="w-24 bg-gray-950 h-1.5 rounded-full overflow-hidden mt-1 border border-white/5">
+                <div id="hud-combo-bar" class="bg-gradient-to-r from-orange-400 to-amber-500 h-full rounded-full transition-all duration-75" style="width: 100%"></div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-start">
+            <!-- Left Stats -->
+            <div class="glass-panel p-5 rounded-2xl pointer-events-auto flex flex-col gap-3 min-w-[280px]">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Survival Mission</span>
+                    <span class="px-2.5 py-1 text-xs font-black bg-green-500/10 border border-green-500/20 text-green-400 rounded-full">
+                        WAVE <span id="hud-wave">1</span>
+                    </span>
+                </div>
+                
+                <div class="h-[1px] bg-white/5 w-full"></div>
+
+                <!-- Health Bar & Values -->
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-sm font-bold">
+                        <span class="text-gray-400 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Vitality
+                        </span>
+                        <span id="hud-hp" class="text-red-400 font-black">100/100</span>
+                    </div>
+                    <div class="w-full bg-gray-950 h-2.5 rounded-full overflow-hidden border border-white/5">
+                        <div id="hud-hp-bar" class="bg-gradient-to-r from-red-500 to-rose-600 h-full transition-all duration-300 rounded-full" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <!-- Shield Bar & Values -->
+                <div class="space-y-1 mt-2">
+                    <div class="flex justify-between items-center text-sm font-bold">
+                        <span class="text-gray-400 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Energy Shield
+                        </span>
+                        <span id="hud-shield" class="text-blue-400 font-black">50/50</span>
+                    </div>
+                    <div class="w-full bg-gray-950 h-2.5 rounded-full overflow-hidden border border-white/5">
+                        <div id="hud-shield-bar" class="bg-gradient-to-r from-cyan-500 to-blue-600 h-full transition-all duration-300 rounded-full" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <!-- Adrenaline Bar & Values -->
+                <div class="space-y-1 mt-2">
+                    <div class="flex justify-between items-center text-sm font-bold">
+                        <span class="text-gray-400 flex items-center gap-1.5">
+                            <span id="adrenaline-bullet" class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span> <span id="adrenaline-label">Adrenaline (Q)</span>
+                        </span>
+                        <span id="hud-adrenaline" class="text-purple-400 font-black">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-950 h-2.5 rounded-full overflow-hidden border border-white/5">
+                        <div id="hud-adrenaline-bar" class="bg-gradient-to-r from-fuchsia-500 to-purple-600 h-full transition-all duration-300 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Finance / Stats -->
+                <div class="grid grid-cols-4 gap-2 mt-1">
+                    <div class="bg-white/5 border border-white/[0.03] p-2 rounded-xl flex flex-col">
+                        <span class="text-[9px] text-gray-500 uppercase font-semibold">Credits</span>
+                        <span class="text-sm font-black text-yellow-400 flex items-center gap-0.5">
+                            $<span id="hud-money">0</span>
+                        </span>
+                    </div>
+                    <div class="bg-white/5 border border-white/[0.03] p-2 rounded-xl flex flex-col">
+                        <span class="text-[9px] text-gray-500 uppercase font-semibold">Score</span>
+                        <span id="hud-score" class="text-sm font-black text-blue-400">0</span>
+                    </div>
+                    <div class="bg-white/5 border border-white/[0.03] p-2 rounded-xl flex flex-col">
+                        <span class="text-[9px] text-gray-500 uppercase font-semibold">Turrets (G)</span>
+                        <span id="hud-turrets" class="text-sm font-black text-cyan-400">0</span>
+                    </div>
+                    <div class="bg-white/5 border border-white/[0.03] p-2 rounded-xl flex flex-col">
+                        <span class="text-[9px] text-gray-500 uppercase font-semibold">Wood (F)</span>
+                        <span id="hud-barricades" class="text-sm font-black text-orange-400">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Weapons (Tappable for mobile) -->
+            <div class="flex gap-2 pointer-events-auto" id="hud-weapons">
+                <!-- Slots populated by JS -->
+            </div>
+        </div>
+
+        <div class="flex justify-between items-end">
+            <!-- Ammo display -->
+            <div class="glass-panel px-6 py-4 rounded-2xl flex items-center gap-3 pointer-events-auto">
+                <span class="text-xs uppercase tracking-widest text-gray-400 font-bold">Ammunition</span>
+                <div class="text-3xl font-black">
+                    <span id="hud-ammo-current" class="text-yellow-400">30</span><span class="text-gray-600 text-xl"> / </span><span id="hud-ammo-max" class="text-gray-400 text-xl">30</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Touch Controls -->
+    <div id="mobile-ui" class="fixed inset-0 pointer-events-none hidden z-20">
+        <button onclick="togglePause()" class="mobile-btn pointer-events-auto absolute top-28 left-4 font-black" style="width:55px; height:55px; font-size:12px;">PAUSE</button>
+        
+        <!-- Left Side Movement -->
+        <div class="absolute bottom-6 left-6 flex gap-4 pointer-events-auto">
+            <button id="m-left" class="mobile-btn" style="width:75px; height:75px; font-size: 24px;">&larr;</button>
+            <button id="m-right" class="mobile-btn" style="width:75px; height:75px; font-size: 24px;">&rarr;</button>
+        </div>
+
+        <!-- Right Side Actions -->
+        <div class="absolute bottom-6 right-6 flex flex-col gap-4 items-end pointer-events-auto">
+            <div class="flex gap-4">
+                <button id="m-grapple" class="mobile-btn" style="width:60px; height:60px; font-size:11px;">HOOK</button>
+                <button id="m-dash" class="mobile-btn" style="width:60px; height:60px; font-size:11px;">DASH</button>
+                <button id="m-reload" class="mobile-btn" style="width:60px; height:60px; font-size:11px;">REL</button>
+            </div>
+            <div class="flex gap-4 mt-1">
+                <button id="m-jump" class="mobile-btn" style="width:80px; height:80px; font-size: 24px;">&uarr;</button>
+                <button id="m-shoot" class="mobile-btn bg-red-600/70 border-red-500" style="width:80px; height:80px; font-size: 16px;">FIRE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Overlay: Perk Selection -->
+    <div id="ui-perks" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md flex flex-col items-center justify-center hidden z-30 p-6">
+        <span class="text-xs uppercase tracking-widest text-emerald-400 font-bold mb-2">Stage Clear</span>
+        <h2 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 mb-2 text-center tracking-tight">WAVE COMPLETED</h2>
+        <p id="perk-bonus-text" class="text-yellow-400 font-bold text-lg mb-8 text-center bg-yellow-500/10 border border-yellow-500/20 px-4 py-1.5 rounded-full">+ $150 Wave Clearance Bonus!</p>
+        <p class="text-gray-400 mb-8 text-center max-w-md text-sm">Select a mutation perk to boost your stats for the rest of the run:</p>
+        <div id="perk-container" class="flex flex-col md:flex-row gap-6 max-w-5xl w-full max-h-[60vh] overflow-y-auto p-2">
+            <!-- Perks injected here -->
+        </div>
+    </div>
+
+    <!-- UI Overlay: Shop -->
+    <div id="ui-shop" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md flex flex-col items-center justify-start py-12 px-6 hidden z-30 overflow-y-auto">
+        <span class="text-xs uppercase tracking-widest text-yellow-400 font-bold mb-2">Military Arsenal</span>
+        <h2 class="text-5xl font-black text-white mb-2 mt-4 md:mt-0 tracking-tight">THE ARMORY</h2>
+        <p class="text-gray-400 mb-8 text-lg">Balance: <span id="shop-money" class="text-yellow-400 font-black">$0</span></p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl pb-24">
+            <!-- Shop Items injected here -->
+        </div>
+
+        <button onclick="nextWave()" class="fixed bottom-8 px-12 py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xl rounded-2xl shadow-[0_8px_25px_rgba(16,185,129,0.3)] transition-all transform hover:scale-[1.03] active:scale-[0.97] z-40">
+            LAUNCH NEXT WAVE
+        </button>
+    </div>
+
+    <!-- UI Overlay: Game Over -->
+    <div id="ui-gameover" class="fixed inset-0 bg-red-950/95 backdrop-blur-md flex flex-col items-center justify-center hidden z-40 p-4">
+        <span class="text-xs uppercase tracking-widest text-red-500 font-bold mb-2">Simulation Terminated</span>
+        <h1 class="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-600 mb-4 text-center tracking-tight">YOU DIED</h1>
+        
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-sm flex flex-col gap-3 text-center mb-8 border-red-500/10">
+            <p class="text-gray-400 text-sm">Survived until Wave: <span id="go-wave" class="text-emerald-400 font-black text-lg">1</span></p>
+            <p class="text-gray-400 text-sm">Final Score: <span id="go-score" class="text-yellow-400 font-black text-lg">0</span></p>
+        </div>
+
+        <button onclick="location.reload()" class="px-8 py-4 bg-white text-gray-950 font-black rounded-2xl text-xl hover:bg-gray-200 transition-colors shadow-2xl">
+            RETRY MISSION
+        </button>
+    </div>
+
+    <!-- UI Overlay: Pause -->
+    <div id="ui-pause" class="fixed inset-0 bg-gray-950/90 backdrop-blur-sm flex flex-col items-center justify-center hidden z-40">
+        <h1 class="text-5xl font-black text-white mb-10 tracking-widest">PAUSED</h1>
+        <div class="flex flex-col gap-4 w-64">
+            <button onclick="togglePause()" class="px-6 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-lg hover:bg-emerald-400 transition-all shadow-[0_4px_15px_rgba(16,185,129,0.2)]">RESUME</button>
+            <button onclick="location.reload()" class="px-6 py-4 bg-red-600 text-white rounded-2xl font-bold text-lg hover:bg-red-500 transition-all">QUIT TO MENU</button>
+        </div>
+    </div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
