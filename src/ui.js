@@ -794,6 +794,81 @@ export function buyAttachment(wId, type, cost) {
     renderShop();
 }
 
+export function isFullscreen() {
+    return Boolean(
+        document.fullscreenElement ||
+        document.webkitFullscreenElement ||
+        document.mozFullScreenElement ||
+        document.msFullscreenElement
+    );
+}
+
+export function requestFullscreen() {
+    const el = document.documentElement;
+    if (el.requestFullscreen) {
+        return el.requestFullscreen();
+    } else if (el.webkitRequestFullscreen) {
+        return el.webkitRequestFullscreen();
+    } else if (el.mozRequestFullScreen) {
+        return el.mozRequestFullScreen();
+    } else if (el.msRequestFullscreen) {
+        return el.msRequestFullscreen();
+    }
+    return Promise.reject(new Error('Fullscreen not supported'));
+}
+
+export function exitFullscreen() {
+    if (document.exitFullscreen) {
+        return document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+        return document.webkitExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+        return document.mozCancelFullScreen();
+    } else if (document.msExitFullscreen) {
+        return document.msExitFullscreen();
+    }
+    return Promise.reject(new Error('Exit fullscreen not supported'));
+}
+
+export function toggleFullscreen() {
+    if (isFullscreen()) {
+        exitFullscreen().catch(() => {});
+    } else {
+        requestFullscreen().then(() => {
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(() => {});
+            }
+        }).catch(() => {});
+    }
+}
+
+export function updateFullscreenUI() {
+    const fs = isFullscreen();
+    const icon = fs ? '🗗' : '⛶';
+
+    const menuIcon = document.getElementById('fullscreen-icon-menu');
+    const menuText = document.getElementById('fullscreen-text-menu');
+    if (menuIcon) menuIcon.innerText = icon;
+    if (menuText) menuText.innerText = fs ? 'EXIT FULL' : 'FULLSCREEN';
+
+    const mobileBtn = document.getElementById('m-btn-fullscreen');
+    if (mobileBtn) mobileBtn.innerText = icon;
+
+    const pauseIcon = document.getElementById('fullscreen-pause-icon');
+    const pauseLabel = document.getElementById('fullscreen-pause-label');
+    if (pauseIcon) pauseIcon.innerText = icon;
+    if (pauseLabel) pauseLabel.innerText = fs ? 'EXIT FULLSCREEN' : 'FULLSCREEN MODE';
+}
+
+document.addEventListener('fullscreenchange', updateFullscreenUI);
+document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+
+window.toggleFullscreen = toggleFullscreen;
+window.requestFullscreen = requestFullscreen;
+window.exitFullscreen = exitFullscreen;
+window.isFullscreen = isFullscreen;
+window.updateFullscreenUI = updateFullscreenUI;
+
 window.buyAttachment = buyAttachment;
 window.togglePause = togglePause;
 window.nextWave = nextWave;
@@ -818,3 +893,4 @@ window.setWeaponIndex = (idx) => {
         updateHUD();
     }
 };
+

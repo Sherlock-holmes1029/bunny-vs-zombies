@@ -11,7 +11,7 @@ import { ExplosiveBarrel } from './entities/ExplosiveBarrel.js';
 import { createParticles, createFloatingText } from './effects.js';
 import { initInput, setupMobileControls, mouse, mobileState } from './input.js';
 import { updateCamera } from './camera.js';
-import { updateDeviceUI, updateHUD, togglePause, lastTimeRef } from './ui.js';
+import { updateDeviceUI, updateHUD, togglePause, lastTimeRef, isFullscreen, requestFullscreen } from './ui.js';
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d', { alpha: false }); 
@@ -22,11 +22,20 @@ let ch = canvas.height = window.innerHeight;
 window.focus();
 document.addEventListener('click', () => window.focus());
 
-window.addEventListener('resize', () => {
+const resizeCanvasAndUI = () => {
     cw = canvas.width = window.innerWidth;
     ch = canvas.height = window.innerHeight;
     updateDeviceUI();
-});
+};
+
+window.addEventListener('resize', resizeCanvasAndUI);
+
+// Re-adjust after mobile browser collapses navigation/status bars in fullscreen
+const onFullscreenChange = () => {
+    setTimeout(resizeCanvasAndUI, 150);
+};
+document.addEventListener('fullscreenchange', onFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 
 export function startWave() {
     gameState.waveKills = 0;
@@ -60,6 +69,15 @@ export function startWave() {
 }
 
 export function startMode(mode = 'survival') {
+    // Attempt fullscreen and landscape lock on mobile user gesture
+    if (isMobileCheck() && !isFullscreen()) {
+        requestFullscreen().then(() => {
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(() => {});
+            }
+        }).catch(() => {});
+    }
+
     gameState.gameMode = mode;
     gameState.score = 0;
     gameState.totalKills = 0;

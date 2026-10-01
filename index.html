@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#030712">
     <title>Bunny vs. Undead: Survival</title>
     <!-- Google Fonts: Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -489,8 +493,8 @@
                 </div>
             </div>
 
-            <!-- Right Weapons (Tappable for mobile, padded so never overlaps Pause button) -->
-            <div class="flex gap-1.5 md:gap-2 pr-14 md:pr-0 pointer-events-auto items-center" id="hud-weapons">
+            <!-- Right Weapons (Tappable for mobile, padded so never overlaps Fullscreen & Pause buttons) -->
+            <div class="flex gap-1.5 md:gap-2 pr-28 md:pr-0 pointer-events-auto items-center" id="hud-weapons">
                 <!-- Slots populated by JS -->
             </div>
         </div>
@@ -508,8 +512,11 @@
 
     <!-- Mobile Touch Controls -->
     <div id="mobile-ui" class="fixed inset-0 pointer-events-none hidden z-20 select-none touch-none">
-        <!-- Top Mobile Bar: Pause button -->
-        <button onclick="togglePause()" class="mobile-btn pointer-events-auto absolute top-4 right-4 font-black z-30 bg-gray-900/80 border-white/20 text-gray-200" style="width:44px; height:44px; font-size:14px;" title="Pause Game">⏸️</button>
+        <!-- Top Mobile Bar: Fullscreen & Pause buttons -->
+        <div class="pointer-events-auto absolute top-3 right-3 flex items-center gap-2 z-30">
+            <button onclick="window.toggleFullscreen()" id="m-btn-fullscreen" class="mobile-btn font-black bg-gray-900/80 border-white/20 text-gray-200" style="width:40px; height:40px; font-size:14px;" title="Toggle Fullscreen">⛶</button>
+            <button onclick="togglePause()" class="mobile-btn font-black bg-gray-900/80 border-white/20 text-gray-200" style="width:40px; height:40px; font-size:14px;" title="Pause Game">⏸️</button>
+        </div>
 
         <!-- Left Side: Floating Virtual Joystick Zone -->
         <div id="joystick-zone" class="absolute bottom-0 left-0 w-[45vw] h-[55vh] pointer-events-auto touch-none select-none z-20">
@@ -695,12 +702,22 @@
         <h1 class="text-4xl md:text-5xl font-black text-white mb-6 md:mb-10 tracking-widest">PAUSED</h1>
         <div class="flex flex-col gap-3 md:gap-4 w-56 md:w-64">
             <button onclick="togglePause()" class="px-5 py-3 md:px-6 md:py-4 bg-emerald-500 text-white rounded-2xl font-bold text-base md:text-lg hover:bg-emerald-400 transition-all shadow-[0_4px_15px_rgba(16,185,129,0.2)]">RESUME</button>
+            <button onclick="window.toggleFullscreen()" id="btn-fullscreen-pause" class="px-5 py-2.5 md:py-3.5 bg-white/10 hover:bg-white/15 text-white border border-white/20 rounded-2xl font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2">
+                <span id="fullscreen-pause-icon">⛶</span>
+                <span id="fullscreen-pause-label">FULLSCREEN MODE</span>
+            </button>
             <button onclick="window.quitToMenu()" class="px-5 py-3 md:px-6 md:py-4 bg-red-600 text-white rounded-2xl font-bold text-base md:text-lg hover:bg-red-500 transition-all">QUIT TO MENU</button>
         </div>
     </div>
 
     <!-- UI Overlay: Main Menu -->
     <div id="ui-menu" class="fixed inset-0 bg-gray-950/95 backdrop-blur-xl flex flex-col items-center justify-start md:justify-center z-50 p-4 md:p-6 overflow-y-auto">
+        <!-- Fullscreen Toggle Button (Mobile & Desktop) -->
+        <button onclick="window.toggleFullscreen()" id="btn-fullscreen-menu" class="absolute top-3 right-3 md:top-6 md:right-6 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 text-white text-[11px] md:text-xs font-bold flex items-center gap-1.5 backdrop-blur-md transition-all shadow-lg cursor-pointer z-50" title="Toggle Fullscreen">
+            <span id="fullscreen-icon-menu" class="text-sm">⛶</span>
+            <span id="fullscreen-text-menu" class="hidden xs:inline">FULLSCREEN</span>
+        </button>
+
         <div class="max-w-4xl w-full flex flex-col items-center text-center py-4 md:py-0">
             <span class="text-[10px] md:text-xs uppercase tracking-widest text-emerald-400 font-extrabold px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-2 md:mb-3">
                 Tactical Undead Survival
