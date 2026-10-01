@@ -255,7 +255,7 @@ export function updateHUD() {
         let slotW = player.weapons[i];
         let active = player.currentWeaponIndex === i;
         let slotClasses = isMobile
-            ? 'w-10 h-10 sm:w-11 sm:h-11 rounded-xl text-[9px]'
+            ? 'w-10 h-10 rounded-xl text-[9px]'
             : 'w-14 h-14 md:w-16 md:h-16 rounded-2xl text-[10px] md:text-[12px]';
         let html = `<div onclick="window.setWeaponIndex(${i})" class="weapon-slot ${slotClasses} border flex items-center justify-center font-bold flex-col transition-all duration-200 ${active ? 'bg-green-500/20 border-green-400 text-green-300 scale-105 shadow-[0_0_16px_rgba(34,197,94,0.4)] z-10' : 'bg-gray-900/70 border-white/10 text-gray-500 hover:text-gray-300 hover:border-white/20'}">
             <div class="${isMobile ? 'text-[8px]' : 'text-[9px] md:text-[10px]'} uppercase tracking-wider mb-0.5 opacity-60">S${i+1}</div>`;
@@ -478,7 +478,7 @@ export function renderShop() {
         }
 
         let card = document.createElement('div');
-        card.className = "bg-gray-900/80 backdrop-blur-md p-3.5 md:p-5 rounded-2xl border border-white/10 flex flex-col justify-between shadow-xl hover:border-emerald-500/30 transition-all min-h-[300px] md:min-h-[340px]";
+        card.className = "bg-gray-900/80 backdrop-blur-md p-3 md:p-5 rounded-2xl border border-white/10 flex flex-col justify-between shadow-xl hover:border-emerald-500/30 transition-all min-h-[210px] md:min-h-[290px]";
 
         if (item.isItem) {
             // Defensive structures & deployables
@@ -810,6 +810,8 @@ window.openSandboxShop = openSandboxShop;
 window.quitToMenu = quitToMenu;
 window.startMode = (mode) => import('./main.js').then(m => m.startMode(mode));
 window.restartCurrentMode = () => import('./main.js').then(m => m.restartCurrentMode());
+window.showPerks = showPerks;
+window.showGameOver = triggerGameOver;
 window.setWeaponIndex = (idx) => {
     if (gameState.player && gameState.player.weapons && gameState.player.weapons[idx]) {
         gameState.player.currentWeaponIndex = idx;

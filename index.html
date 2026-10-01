@@ -101,7 +101,13 @@
             animation: ult-glow 1.2s infinite ease-in-out !important;
         }
 
-        /* Mobile HUD Responsive Overrides */
+        /* Mobile HUD & Controls Responsive Overrides */
+        @media (max-width: 900px), (max-height: 520px), (pointer: coarse) {
+            #hud-weapons {
+                padding-right: 56px !important;
+            }
+        }
+
         @media (max-width: 768px), (pointer: coarse) {
             #hud-ammo-container {
                 position: fixed !important;
@@ -128,38 +134,236 @@
             }
         }
 
-        /* Landscape Mobile Specific Layout */
+        /* Landscape Mobile Specific Layout (Optimized for Samsung Galaxy A13: 854x384 / 854x348) */
         @media (max-height: 520px) {
+            /* In-game HUD Layout */
             #hud-left-stats {
-                max-width: 195px !important;
-                padding: 6px 10px !important;
+                max-width: 180px !important;
+                padding: 5px 8px !important;
                 border-radius: 12px !important;
-                gap: 3px !important;
+                gap: 2px !important;
             }
             #hud-left-stats .stat-row-counts {
                 display: none !important;
             }
             #hud-ammo-container {
                 position: fixed !important;
-                top: 14px !important;
-                right: 236px !important;
+                top: 10px !important;
+                right: 254px !important;
                 bottom: auto !important;
-                padding: 4px 10px !important;
-                border-radius: 12px !important;
-                gap: 6px !important;
+                padding: 3px 8px !important;
+                border-radius: 10px !important;
+                gap: 5px !important;
                 z-index: 15 !important;
             }
+            #hud-ammo-container span {
+                font-size: 8px !important;
+            }
+            #hud-ammo-container div {
+                font-size: 1rem !important;
+            }
+
+            /* Mobile Touch Controls - Zero Overlap Placement */
+            #mobile-ui .absolute.bottom-6.right-6 {
+                bottom: 10px !important;
+                right: 14px !important;
+                gap: 6px !important;
+            }
+            #mobile-ui .mobile-btn {
+                width: 44px !important;
+                height: 44px !important;
+                font-size: 9px !important;
+            }
+            #m-jump {
+                width: 62px !important;
+                height: 62px !important;
+                font-size: 20px !important;
+            }
+            #m-shoot {
+                width: 72px !important;
+                height: 72px !important;
+                font-size: 14px !important;
+            }
             #m-ultimate {
-                bottom: 115px !important;
-                right: 236px !important;
+                bottom: 84px !important;
+                right: 228px !important;
+                width: 44px !important;
+                height: 44px !important;
             }
             #m-interact {
-                bottom: 115px !important;
-                right: 300px !important;
+                bottom: 84px !important;
+                right: 282px !important;
+                width: 44px !important;
+                height: 44px !important;
             }
             #m-deploy-drawer {
-                bottom: 165px !important;
-                right: 16px !important;
+                bottom: 138px !important;
+                right: 14px !important;
+            }
+            #m-deploy-drawer .mobile-deploy-item {
+                width: 46px !important;
+                height: 46px !important;
+                padding: 4px !important;
+            }
+
+            /* Main Menu Landscape */
+            #ui-menu {
+                justify-content: flex-start !important;
+                padding: 6px 14px !important;
+            }
+            #ui-menu > div {
+                padding: 2px 0 !important;
+            }
+            #ui-menu h1 {
+                font-size: 1.55rem !important;
+                margin-top: 0 !important;
+                margin-bottom: 2px !important;
+                line-height: 1.1 !important;
+            }
+            #ui-menu p {
+                font-size: 0.72rem !important;
+                margin-bottom: 6px !important;
+                line-height: 1.2 !important;
+            }
+            #ui-menu .grid {
+                gap: 8px !important;
+                margin-bottom: 6px !important;
+                max-width: 660px !important;
+            }
+            #ui-menu .perk-card {
+                padding: 8px 12px !important;
+                border-radius: 12px !important;
+            }
+            #ui-menu .perk-card h2 {
+                font-size: 1.05rem !important;
+                margin-bottom: 2px !important;
+            }
+            #ui-menu .perk-card p {
+                font-size: 0.68rem !important;
+                line-height: 1.25 !important;
+                margin-bottom: 4px !important;
+            }
+            #ui-menu .perk-card ul {
+                margin-bottom: 4px !important;
+                space-y: 1px !important;
+            }
+            #ui-menu .perk-card li {
+                font-size: 0.65rem !important;
+                gap: 4px !important;
+            }
+            #ui-menu .perk-card button {
+                padding: 6px 10px !important;
+                font-size: 0.72rem !important;
+                border-radius: 8px !important;
+            }
+
+            /* The Armory Shop Landscape */
+            #ui-shop > div:first-child {
+                padding: 4px 12px !important;
+            }
+            #ui-shop > div:first-child h2 {
+                font-size: 1.15rem !important;
+            }
+            #ui-shop > div:first-child span.rounded-full {
+                display: none !important;
+            }
+            #ui-shop > div:first-child .glass-panel {
+                padding: 2px 8px !important;
+                border-radius: 8px !important;
+            }
+            #ui-shop > div:first-child .glass-panel span:first-child {
+                font-size: 8px !important;
+            }
+            #ui-shop > div:first-child .glass-panel span:last-child {
+                font-size: 1.15rem !important;
+            }
+            #shop-tabs {
+                padding: 1px 0 !important;
+                gap: 4px !important;
+            }
+            #shop-tabs button {
+                padding: 3px 8px !important;
+                font-size: 9.5px !important;
+                border-radius: 8px !important;
+            }
+            #ui-shop .overflow-y-auto {
+                padding: 4px 10px !important;
+            }
+            #ui-shop .grid {
+                gap: 8px !important;
+                padding-bottom: 58px !important;
+            }
+            #ui-shop > div:last-child {
+                padding: 4px 12px !important;
+            }
+            #ui-shop > div:last-child .hidden.md\:flex {
+                display: none !important;
+            }
+            #ui-shop > div:last-child button {
+                padding: 5px 12px !important;
+                font-size: 11px !important;
+                border-radius: 8px !important;
+            }
+            #shop-action-btn {
+                font-size: 12px !important;
+                padding: 5px 14px !important;
+            }
+
+            /* Modals: Perks, Pause & GameOver */
+            #ui-perks {
+                justify-content: flex-start !important;
+                padding: 6px 12px !important;
+            }
+            #ui-perks h2 {
+                font-size: 1.45rem !important;
+                margin-bottom: 2px !important;
+            }
+            #perk-bonus-text {
+                font-size: 0.72rem !important;
+                padding: 1px 6px !important;
+                margin-bottom: 3px !important;
+            }
+            #ui-perks p {
+                font-size: 0.7rem !important;
+                margin-bottom: 6px !important;
+            }
+            #perk-container {
+                gap: 8px !important;
+                max-width: 760px !important;
+            }
+            #ui-pause h1 {
+                font-size: 1.6rem !important;
+                margin-bottom: 10px !important;
+            }
+            #ui-pause .flex-col {
+                gap: 6px !important;
+            }
+            #ui-pause button {
+                padding: 7px 14px !important;
+                font-size: 0.82rem !important;
+                border-radius: 10px !important;
+            }
+            #ui-gameover {
+                justify-content: flex-start !important;
+                padding: 8px 12px !important;
+            }
+            #ui-gameover h1 {
+                font-size: 2rem !important;
+                margin-bottom: 3px !important;
+            }
+            #ui-gameover .glass-panel {
+                padding: 6px 12px !important;
+                margin-bottom: 6px !important;
+                max-width: 280px !important;
+                gap: 2px !important;
+            }
+            #ui-gameover p {
+                font-size: 0.72rem !important;
+            }
+            #ui-gameover button {
+                padding: 6px 12px !important;
+                font-size: 0.78rem !important;
+                border-radius: 8px !important;
             }
         }
     </style>
@@ -364,7 +568,7 @@
         <div class="absolute bottom-6 right-6 flex flex-col items-end gap-3 pointer-events-auto select-none z-20">
             <!-- Top Utility Row: Deploy Toggle, Hook, Dash, Reload -->
             <div class="flex items-center gap-2.5">
-                <button id="m-deploy-toggle" class="mobile-btn bg-amber-950/60 border-amber-500/40 text-amber-300 relative" style="width:52px; height:52px; font-size:10px;" title="Build Defenses">
+                <button id="m-deploy-toggle" onclick="window.toggleDeployDrawer()" class="mobile-btn bg-amber-950/60 border-amber-500/40 text-amber-300 relative" style="width:52px; height:52px; font-size:10px;" title="Build Defenses">
                     <span class="text-sm">🔨</span>
                     <span class="text-[8px] font-black uppercase block">BUILD</span>
                 </button>

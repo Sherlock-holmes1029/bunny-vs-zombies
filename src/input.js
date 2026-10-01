@@ -9,6 +9,23 @@ export const mobileState = {
     joystickActive: false
 };
 
+export function toggleDeployDrawer() {
+    const deployToggle = document.getElementById('m-deploy-toggle');
+    const deployDrawer = document.getElementById('m-deploy-drawer');
+    if (!deployDrawer) return;
+    const isHidden = deployDrawer.classList.contains('opacity-0');
+    if (isHidden) {
+        deployDrawer.classList.remove('opacity-0', 'translate-y-3', 'translate-y-4', 'pointer-events-none');
+        if (deployToggle) deployToggle.classList.add('bg-amber-500/40', 'border-amber-400');
+    } else {
+        deployDrawer.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+        if (deployToggle) deployToggle.classList.remove('bg-amber-500/40', 'border-amber-400');
+    }
+}
+if (typeof window !== 'undefined') {
+    window.toggleDeployDrawer = toggleDeployDrawer;
+}
+
 export function initInput(onGrapple, onPause, isMobileCheck, getCurrentState, GameState, onPlaceTurret, onUltimate, onPlaceBarricade, onInteract, onPlaceLandmine, onPlaceBeacon) {
     window.addEventListener('keydown', e => {
         keys[e.key.toLowerCase()] = keys[e.key] = true;
@@ -311,42 +328,63 @@ export function setupMobileControls(
     // --- 3. Deployables Drawer ---
     const deployToggle = document.getElementById('m-deploy-toggle');
     const deployDrawer = document.getElementById('m-deploy-drawer');
+
+    const toggleDeployDrawer = () => {
+        if (!deployDrawer) return;
+        const isHidden = deployDrawer.classList.contains('opacity-0');
+        if (isHidden) {
+            deployDrawer.classList.remove('opacity-0', 'translate-y-3', 'translate-y-4', 'pointer-events-none');
+            if (deployToggle) deployToggle.classList.add('bg-amber-500/40', 'border-amber-400');
+        } else {
+            deployDrawer.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+            if (deployToggle) deployToggle.classList.remove('bg-amber-500/40', 'border-amber-400');
+        }
+        triggerHaptic(10);
+    };
+    window.toggleDeployDrawer = toggleDeployDrawer;
+
     if (deployToggle && deployDrawer) {
-        deployToggle.addEventListener('touchstart', (e) => {
+        let lastToggle = 0;
+        const onToggle = (e) => {
+            const now = Date.now();
+            if (now - lastToggle < 300) return;
+            lastToggle = now;
             e.preventDefault();
             e.stopPropagation();
-            const isHidden = deployDrawer.classList.contains('opacity-0');
-            if (isHidden) {
-                deployDrawer.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
-                deployToggle.classList.add('bg-amber-500/40', 'border-amber-400');
-            } else {
-                deployDrawer.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
-                deployToggle.classList.remove('bg-amber-500/40', 'border-amber-400');
-            }
-            triggerHaptic(10);
-        }, { passive: false });
+            toggleDeployDrawer();
+        };
+        deployToggle.addEventListener('touchstart', onToggle, { passive: false });
+        deployToggle.addEventListener('pointerdown', onToggle);
 
-        document.addEventListener('touchstart', (e) => {
+        const onOutside = (e) => {
             if (!deployDrawer.classList.contains('opacity-0') &&
                 !deployDrawer.contains(e.target) &&
                 !deployToggle.contains(e.target)) {
-                deployDrawer.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+                deployDrawer.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
                 deployToggle.classList.remove('bg-amber-500/40', 'border-amber-400');
             }
-        });
+        };
+        document.addEventListener('touchstart', onOutside);
+        document.addEventListener('pointerdown', onOutside);
     }
 
     const bindDeployItem = (id, handler) => {
         const el = document.getElementById(id);
         if (!el || !handler) return;
-        el.addEventListener('touchstart', (e) => {
+        let lastItem = 0;
+        const onItem = (e) => {
+            const now = Date.now();
+            if (now - lastItem < 250) return;
+            lastItem = now;
             e.preventDefault();
             e.stopPropagation();
             if (getCurrentState() === GameState.PLAYING) {
                 handler();
                 triggerHaptic(15);
             }
-        }, { passive: false });
+        };
+        el.addEventListener('touchstart', onItem, { passive: false });
+        el.addEventListener('pointerdown', onItem);
     };
 
     bindDeployItem('m-turret', onPlaceTurret);
