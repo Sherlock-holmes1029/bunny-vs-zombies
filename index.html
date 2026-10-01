@@ -21,13 +21,13 @@
         }
     </script>
     <style>
-        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #030712; touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Outfit', sans-serif; }
+        body, html { margin: 0; padding: 0; overflow: hidden; background-color: #030712; touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
         canvas { display: block; width: 100vw; height: 100vh; image-rendering: pixelated; }
         
         /* Mobile Control Styles */
         .mobile-btn {
-            background: rgba(17, 24, 39, 0.75);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(17, 24, 39, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             border-radius: 50%;
             color: white;
             display: flex;
@@ -37,38 +37,42 @@
             user-select: none;
             -webkit-user-select: none;
             touch-action: none;
-            backdrop-filter: blur(8px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            transition: transform 0.05s, background-color 0.05s, border-color 0.05s;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+            transition: transform 0.05s, background-color 0.08s, border-color 0.08s;
         }
-        .mobile-btn:active { background: #10B981; border-color: #10B981; transform: scale(0.9); }
-        .weapon-slot { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; touch-action: manipulation; }
+        .mobile-btn:active { background: #10B981; border-color: #10B981; transform: scale(0.92); }
+        .weapon-slot { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         .weapon-slot:hover { transform: translateY(-2px); }
+        .weapon-slot:active { transform: scale(0.95); }
         
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(31, 41, 55, 0.5); border-radius: 4px; }
+        /* Custom Scrollbar & Utilities */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(31, 41, 55, 0.4); border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #10B981; border-radius: 4px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         /* Premium HUD elements */
         .glass-panel {
-            background: rgba(17, 24, 39, 0.75);
+            background: rgba(17, 24, 39, 0.82);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
         }
         
         /* Perk cards styling */
         .perk-card {
-            background: linear-gradient(135deg, rgba(31, 41, 55, 0.6) 0%, rgba(17, 24, 39, 0.85) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, rgba(31, 41, 55, 0.7) 0%, rgba(17, 24, 39, 0.9) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .perk-card:hover {
-            border-color: rgba(16, 185, 129, 0.4);
-            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.15);
-            transform: translateY(-6px);
+            border-color: rgba(16, 185, 129, 0.45);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.2);
+            transform: translateY(-4px);
         }
 
         /* Pulse Animation */
@@ -77,6 +81,87 @@
             50% { opacity: 0.8; transform: scale(1.02); }
         }
         .pulse-soft { animation: pulse-soft 2s infinite ease-in-out; }
+
+        /* Ultimate Neon Glow */
+        @keyframes ult-glow {
+            0%, 100% {
+                box-shadow: 0 0 18px rgba(217, 70, 239, 0.7), inset 0 0 10px rgba(217, 70, 239, 0.4);
+                border-color: #f0abfc;
+                transform: scale(1.03);
+            }
+            50% {
+                box-shadow: 0 0 32px rgba(217, 70, 239, 1), inset 0 0 16px rgba(217, 70, 239, 0.7);
+                border-color: #ffffff;
+                transform: scale(1.1);
+            }
+        }
+        .ult-ready {
+            background: linear-gradient(135deg, #a855f7 0%, #d946ef 100%) !important;
+            color: #ffffff !important;
+            animation: ult-glow 1.2s infinite ease-in-out !important;
+        }
+
+        /* Mobile HUD Responsive Overrides */
+        @media (max-width: 768px), (pointer: coarse) {
+            #hud-ammo-container {
+                position: fixed !important;
+                bottom: auto !important;
+                top: 72px !important;
+                right: 16px !important;
+                padding: 4px 12px !important;
+                border-radius: 12px !important;
+                gap: 6px !important;
+                z-index: 15 !important;
+            }
+            #hud-ammo-container span {
+                font-size: 8px !important;
+                letter-spacing: 0.05em !important;
+            }
+            #hud-ammo-container div {
+                font-size: 1.15rem !important;
+            }
+            #hud-left-stats {
+                max-width: 215px !important;
+                padding: 8px 12px !important;
+                border-radius: 16px !important;
+                gap: 6px !important;
+            }
+        }
+
+        /* Landscape Mobile Specific Layout */
+        @media (max-height: 520px) {
+            #hud-left-stats {
+                max-width: 195px !important;
+                padding: 6px 10px !important;
+                border-radius: 12px !important;
+                gap: 3px !important;
+            }
+            #hud-left-stats .stat-row-counts {
+                display: none !important;
+            }
+            #hud-ammo-container {
+                position: fixed !important;
+                top: 14px !important;
+                right: 236px !important;
+                bottom: auto !important;
+                padding: 4px 10px !important;
+                border-radius: 12px !important;
+                gap: 6px !important;
+                z-index: 15 !important;
+            }
+            #m-ultimate {
+                bottom: 115px !important;
+                right: 236px !important;
+            }
+            #m-interact {
+                bottom: 115px !important;
+                right: 300px !important;
+            }
+            #m-deploy-drawer {
+                bottom: 165px !important;
+                right: 16px !important;
+            }
+        }
     </style>
 </head>
 <body class="text-white font-sans antialiased">
@@ -95,90 +180,115 @@
             </div>
         </div>
 
-        <div class="flex justify-between items-start">
+        <!-- Top-Center Dedicated Boss Health Bar -->
+        <div id="hud-boss-bar-container" class="absolute top-16 left-1/2 transform -translate-x-1/2 glass-panel px-6 py-3 rounded-2xl flex flex-col items-center justify-center hidden pointer-events-none min-w-[340px] md:min-w-[480px] border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.25)] transition-all z-20">
+            <div class="flex items-center justify-between w-full mb-1">
+                <div class="flex items-center gap-2">
+                    <span class="text-base animate-pulse">💀</span>
+                    <span id="boss-name" class="text-sm md:text-base font-black text-red-400 tracking-wider">THE BEHEMOTH</span>
+                </div>
+                <span id="boss-title" class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">EARTHSHAKER TITAN</span>
+            </div>
+            <!-- Double Layer HP Bar -->
+            <div class="w-full bg-gray-950 h-3 rounded-full overflow-hidden border border-red-500/20 relative">
+                <div id="boss-shield-bar" class="absolute top-0 left-0 bg-gradient-to-r from-blue-500 to-cyan-400 h-full rounded-full transition-all duration-150 z-10" style="width: 0%"></div>
+                <div id="boss-hp-bar" class="bg-gradient-to-r from-red-600 via-rose-500 to-orange-500 h-full rounded-full transition-all duration-150" style="width: 100%"></div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-start w-full">
             <!-- Left Stats -->
-            <div class="glass-panel p-5 rounded-2xl pointer-events-auto flex flex-col gap-3 min-w-[280px]">
+            <div id="hud-left-stats" class="glass-panel p-2.5 md:p-5 rounded-2xl pointer-events-auto flex flex-col gap-1.5 md:gap-3 max-w-[215px] sm:max-w-[260px] md:min-w-[280px]">
                 <div class="flex justify-between items-center">
-                    <span class="text-xs uppercase tracking-widest text-gray-400 font-semibold">Survival Mission</span>
-                    <span class="px-2.5 py-1 text-xs font-black bg-green-500/10 border border-green-500/20 text-green-400 rounded-full">
-                        WAVE <span id="hud-wave">1</span>
-                    </span>
+                    <span id="hud-mission-title" class="text-[10px] md:text-xs uppercase tracking-widest text-gray-400 font-semibold truncate mr-1">Survival</span>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="window.openSandboxShop()" id="hud-sandbox-shop-btn" class="hidden px-2 py-0.5 text-[10px] font-black bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-500/40 text-yellow-400 rounded-full transition-all flex items-center gap-1 cursor-pointer">
+                            <span>🛒</span> SHOP
+                        </button>
+                        <span id="hud-wave-badge" class="px-2 py-0.5 text-[10px] md:text-xs font-black bg-green-500/10 border border-green-500/20 text-green-400 rounded-full whitespace-nowrap">
+                            <span id="hud-wave-prefix">WAVE</span> <span id="hud-wave">1</span>
+                        </span>
+                    </div>
                 </div>
                 
                 <div class="h-[1px] bg-white/5 w-full"></div>
 
                 <!-- Health Bar & Values -->
-                <div class="space-y-1">
-                    <div class="flex justify-between items-center text-sm font-bold">
-                        <span class="text-gray-400 flex items-center gap-1.5">
+                <div class="space-y-0.5 md:space-y-1">
+                    <div class="flex justify-between items-center text-xs md:text-sm font-bold">
+                        <span class="text-gray-400 flex items-center gap-1.5 text-[11px] md:text-xs">
                             <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Vitality
                         </span>
-                        <span id="hud-hp" class="text-red-400 font-black">100/100</span>
+                        <span id="hud-hp" class="text-red-400 font-black text-xs md:text-sm">100/100</span>
                     </div>
-                    <div class="w-full bg-gray-950 h-2.5 rounded-full overflow-hidden border border-white/5">
+                    <div class="w-full bg-gray-950 h-2 md:h-2.5 rounded-full overflow-hidden border border-white/5">
                         <div id="hud-hp-bar" class="bg-gradient-to-r from-red-500 to-rose-600 h-full transition-all duration-300 rounded-full" style="width: 100%"></div>
                     </div>
                 </div>
 
                 <!-- Shield Bar & Values -->
-                <div class="space-y-1 mt-2">
-                    <div class="flex justify-between items-center text-sm font-bold">
-                        <span class="text-gray-400 flex items-center gap-1.5">
-                            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Energy Shield
+                <div class="space-y-0.5 md:space-y-1 mt-1">
+                    <div class="flex justify-between items-center text-xs md:text-sm font-bold">
+                        <span class="text-gray-400 flex items-center gap-1.5 text-[11px] md:text-xs">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Shield
                         </span>
-                        <span id="hud-shield" class="text-blue-400 font-black">50/50</span>
+                        <span id="hud-shield" class="text-blue-400 font-black text-xs md:text-sm">50/50</span>
                     </div>
-                    <div class="w-full bg-gray-950 h-2.5 rounded-full overflow-hidden border border-white/5">
+                    <div class="w-full bg-gray-950 h-2 md:h-2.5 rounded-full overflow-hidden border border-white/5">
                         <div id="hud-shield-bar" class="bg-gradient-to-r from-cyan-500 to-blue-600 h-full transition-all duration-300 rounded-full" style="width: 100%"></div>
                     </div>
                 </div>
 
                 <!-- Adrenaline Bar & Values -->
-                <div class="space-y-1 mt-2">
-                    <div class="flex justify-between items-center text-sm font-bold">
-                        <span class="text-gray-400 flex items-center gap-1.5">
-                            <span id="adrenaline-bullet" class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span> <span id="adrenaline-label">Adrenaline (Q)</span>
+                <div class="space-y-0.5 md:space-y-1 mt-1">
+                    <div class="flex justify-between items-center text-xs md:text-sm font-bold">
+                        <span class="text-gray-400 flex items-center gap-1.5 text-[11px] md:text-xs">
+                            <span id="adrenaline-bullet" class="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span> <span id="adrenaline-label">Adrenaline</span>
                         </span>
-                        <span id="hud-adrenaline" class="text-purple-400 font-black">0%</span>
+                        <span id="hud-adrenaline" class="text-purple-400 font-black text-xs md:text-sm">0%</span>
                     </div>
-                    <div class="w-full bg-gray-950 h-2.5 rounded-full overflow-hidden border border-white/5">
+                    <div class="w-full bg-gray-950 h-2 md:h-2.5 rounded-full overflow-hidden border border-white/5">
                         <div id="hud-adrenaline-bar" class="bg-gradient-to-r from-fuchsia-500 to-purple-600 h-full transition-all duration-300 rounded-full" style="width: 0%"></div>
                     </div>
                 </div>
 
                 <!-- Finance / Stats -->
-                <div class="grid grid-cols-4 gap-2 mt-1">
-                    <div class="bg-white/5 border border-white/[0.03] p-2 rounded-xl flex flex-col">
-                        <span class="text-[9px] text-gray-500 uppercase font-semibold">Credits</span>
-                        <span class="text-sm font-black text-yellow-400 flex items-center gap-0.5">
+                <div class="grid grid-cols-5 gap-1 md:gap-1.5 mt-0.5 stat-row-counts">
+                    <div class="bg-white/5 border border-white/[0.03] p-1 md:p-1.5 rounded-lg md:rounded-xl flex flex-col text-center">
+                        <span class="text-[7px] md:text-[8px] text-gray-500 uppercase font-semibold">Credits</span>
+                        <span class="text-[10px] md:text-sm font-black text-yellow-400 flex items-center justify-center gap-0.5">
                             $<span id="hud-money">0</span>
                         </span>
                     </div>
-                    <div class="bg-white/5 border border-white/[0.03] p-2 rounded-xl flex flex-col">
-                        <span class="text-[9px] text-gray-500 uppercase font-semibold">Score</span>
-                        <span id="hud-score" class="text-sm font-black text-blue-400">0</span>
+                    <div class="bg-white/5 border border-white/[0.03] p-1 md:p-1.5 rounded-lg md:rounded-xl flex flex-col text-center">
+                        <span class="text-[7px] md:text-[8px] text-gray-500 uppercase font-semibold">Score</span>
+                        <span id="hud-score" class="text-[10px] md:text-sm font-black text-blue-400">0</span>
                     </div>
-                    <div class="bg-white/5 border border-white/[0.03] p-2 rounded-xl flex flex-col">
-                        <span class="text-[9px] text-gray-500 uppercase font-semibold">Turrets (G)</span>
-                        <span id="hud-turrets" class="text-sm font-black text-cyan-400">0</span>
+                    <div class="bg-white/5 border border-white/[0.03] p-1 md:p-1.5 rounded-lg md:rounded-xl flex flex-col text-center">
+                        <span class="text-[7px] md:text-[8px] text-gray-500 uppercase font-semibold">Turrets</span>
+                        <span id="hud-turrets" class="text-[10px] md:text-sm font-black text-cyan-400">0</span>
                     </div>
-                    <div class="bg-white/5 border border-white/[0.03] p-2 rounded-xl flex flex-col">
-                        <span class="text-[9px] text-gray-500 uppercase font-semibold">Wood (F)</span>
-                        <span id="hud-barricades" class="text-sm font-black text-orange-400">0</span>
+                    <div class="bg-white/5 border border-white/[0.03] p-1 md:p-1.5 rounded-lg md:rounded-xl flex flex-col text-center">
+                        <span class="text-[7px] md:text-[8px] text-gray-500 uppercase font-semibold">Wood</span>
+                        <span id="hud-barricades" class="text-[10px] md:text-sm font-black text-orange-400">0</span>
+                    </div>
+                    <div class="bg-white/5 border border-white/[0.03] p-1 md:p-1.5 rounded-lg md:rounded-xl flex flex-col text-center">
+                        <span class="text-[7px] md:text-[8px] text-gray-500 uppercase font-semibold">Mines</span>
+                        <span id="hud-landmines" class="text-[10px] md:text-sm font-black text-rose-400">0</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Weapons (Tappable for mobile) -->
-            <div class="flex gap-2 pointer-events-auto" id="hud-weapons">
+            <!-- Right Weapons (Tappable for mobile, padded so never overlaps Pause button) -->
+            <div class="flex gap-1.5 md:gap-2 pr-14 md:pr-0 pointer-events-auto items-center" id="hud-weapons">
                 <!-- Slots populated by JS -->
             </div>
         </div>
 
         <div class="flex justify-between items-end">
             <!-- Ammo display -->
-            <div class="glass-panel px-6 py-4 rounded-2xl flex items-center gap-3 pointer-events-auto">
-                <span class="text-xs uppercase tracking-widest text-gray-400 font-bold">Ammunition</span>
+            <div id="hud-ammo-container" class="glass-panel px-6 py-4 rounded-2xl flex items-center gap-3 pointer-events-auto transition-all duration-300">
+                <span class="text-xs uppercase tracking-widest text-gray-400 font-bold">Ammo</span>
                 <div class="text-3xl font-black">
                     <span id="hud-ammo-current" class="text-yellow-400">30</span><span class="text-gray-600 text-xl"> / </span><span id="hud-ammo-max" class="text-gray-400 text-xl">30</span>
                 </div>
@@ -187,76 +297,290 @@
     </div>
 
     <!-- Mobile Touch Controls -->
-    <div id="mobile-ui" class="fixed inset-0 pointer-events-none hidden z-20">
-        <button onclick="togglePause()" class="mobile-btn pointer-events-auto absolute top-28 left-4 font-black" style="width:55px; height:55px; font-size:12px;">PAUSE</button>
-        
-        <!-- Left Side Movement -->
-        <div class="absolute bottom-6 left-6 flex gap-4 pointer-events-auto">
-            <button id="m-left" class="mobile-btn" style="width:75px; height:75px; font-size: 24px;">&larr;</button>
-            <button id="m-right" class="mobile-btn" style="width:75px; height:75px; font-size: 24px;">&rarr;</button>
+    <div id="mobile-ui" class="fixed inset-0 pointer-events-none hidden z-20 select-none touch-none">
+        <!-- Top Mobile Bar: Pause button -->
+        <button onclick="togglePause()" class="mobile-btn pointer-events-auto absolute top-4 right-4 font-black z-30 bg-gray-900/80 border-white/20 text-gray-200" style="width:44px; height:44px; font-size:14px;" title="Pause Game">⏸️</button>
+
+        <!-- Left Side: Floating Virtual Joystick Zone -->
+        <div id="joystick-zone" class="absolute bottom-0 left-0 w-[45vw] h-[55vh] pointer-events-auto touch-none select-none z-20">
+            <!-- Joystick Base -->
+            <div id="joystick-base" class="absolute pointer-events-none rounded-full border-2 border-emerald-500/40 bg-gray-950/70 backdrop-blur-md shadow-[0_0_25px_rgba(16,185,129,0.2)] flex items-center justify-center transition-opacity duration-200 opacity-60" style="width: 120px; height: 120px; left: 32px; bottom: 32px;">
+                <!-- Subtle directional crosshairs -->
+                <div class="absolute w-full h-[1px] bg-emerald-500/15"></div>
+                <div class="absolute h-full w-[1px] bg-emerald-500/15"></div>
+                <div class="w-8 h-8 rounded-full border border-emerald-500/30 bg-emerald-500/10"></div>
+                <!-- Movable Nub -->
+                <div id="joystick-nub" class="absolute w-12 h-12 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 shadow-[0_0_16px_rgba(16,185,129,0.6)] border-2 border-white/70"></div>
+            </div>
         </div>
 
-        <!-- Right Side Actions -->
-        <div class="absolute bottom-6 right-6 flex flex-col gap-4 items-end pointer-events-auto">
-            <div class="flex gap-4">
-                <button id="m-grapple" class="mobile-btn" style="width:60px; height:60px; font-size:11px;">HOOK</button>
-                <button id="m-dash" class="mobile-btn" style="width:60px; height:60px; font-size:11px;">DASH</button>
-                <button id="m-reload" class="mobile-btn" style="width:60px; height:60px; font-size:11px;">REL</button>
+        <!-- Deployables Expandable Drawer (positioned cleanly above utility buttons) -->
+        <div id="m-deploy-drawer" class="absolute bottom-[175px] right-6 flex flex-col items-end gap-2 pointer-events-none transition-all duration-200 opacity-0 translate-y-3 z-30">
+            <div class="glass-panel px-3 py-2 rounded-2xl border border-amber-500/30 flex items-center gap-2 shadow-2xl bg-gray-950/95">
+                <!-- Turret (G) -->
+                <button id="m-turret" class="mobile-deploy-item flex flex-col items-center justify-center p-2 rounded-xl bg-cyan-950/50 border border-cyan-500/30 active:scale-95 text-cyan-300 relative pointer-events-auto" style="width:52px; height:52px;" title="Deploy Turret (G)">
+                    <span class="text-base">🔫</span>
+                    <span class="text-[8px] font-black mt-0.5">TURRET</span>
+                    <span id="m-badge-turret" class="absolute -top-1.5 -right-1.5 bg-cyan-500 text-gray-950 font-black text-[9px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center shadow-md">0</span>
+                </button>
+
+                <!-- Barricade (F) -->
+                <button id="m-barricade" class="mobile-deploy-item flex flex-col items-center justify-center p-2 rounded-xl bg-orange-950/50 border border-orange-500/30 active:scale-95 text-orange-300 relative pointer-events-auto" style="width:52px; height:52px;" title="Deploy Barricade (F)">
+                    <span class="text-base">🛡️</span>
+                    <span class="text-[8px] font-black mt-0.5">WALL</span>
+                    <span id="m-badge-barricade" class="absolute -top-1.5 -right-1.5 bg-orange-500 text-gray-950 font-black text-[9px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center shadow-md">0</span>
+                </button>
+
+                <!-- Mine (C) -->
+                <button id="m-mine" class="mobile-deploy-item flex flex-col items-center justify-center p-2 rounded-xl bg-rose-950/50 border border-rose-500/30 active:scale-95 text-rose-300 relative pointer-events-auto" style="width:52px; height:52px;" title="Deploy Mine (C)">
+                    <span class="text-base">💣</span>
+                    <span class="text-[8px] font-black mt-0.5">MINE</span>
+                    <span id="m-badge-mine" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-gray-950 font-black text-[9px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center shadow-md">0</span>
+                </button>
+
+                <!-- Beacon (B) -->
+                <button id="m-beacon" class="mobile-deploy-item flex flex-col items-center justify-center p-2 rounded-xl bg-sky-950/50 border border-sky-500/30 active:scale-95 text-sky-300 relative pointer-events-auto" style="width:52px; height:52px;" title="Deploy Beacon (B)">
+                    <span class="text-base">📡</span>
+                    <span class="text-[8px] font-black mt-0.5">BEACON</span>
+                    <span id="m-badge-beacon" class="absolute -top-1.5 -right-1.5 bg-sky-500 text-gray-950 font-black text-[9px] px-1.5 py-0.2 rounded-full min-w-[16px] text-center shadow-md">0</span>
+                </button>
             </div>
-            <div class="flex gap-4 mt-1">
-                <button id="m-jump" class="mobile-btn" style="width:80px; height:80px; font-size: 24px;">&uarr;</button>
-                <button id="m-shoot" class="mobile-btn bg-red-600/70 border-red-500" style="width:80px; height:80px; font-size: 16px;">FIRE</button>
+        </div>
+
+        <!-- Ultimate (Adrenaline) -->
+        <button id="m-ultimate" class="mobile-btn pointer-events-auto absolute bottom-44 right-6 bg-purple-950/60 border border-purple-500/30 text-purple-300 flex flex-col items-center justify-center transition-all duration-300 z-20" style="width:54px; height:54px;" title="Adrenaline Rush">
+            <span class="text-base leading-none">⚡</span>
+            <span class="text-[8px] font-black mt-0.5">ULT</span>
+            <span id="m-ultimate-pct" class="text-[8px] text-purple-400 font-bold">0%</span>
+        </button>
+
+        <!-- Contextual Interact (Auto pops up near turrets/barricades) -->
+        <button id="m-interact" class="mobile-btn pointer-events-none absolute bottom-44 right-24 bg-emerald-950/90 border-2 border-emerald-400 text-emerald-300 flex flex-col items-center justify-center transition-all duration-300 opacity-0 scale-75 shadow-[0_0_20px_rgba(16,185,129,0.5)] z-20" style="width:56px; height:56px;" title="Interact">
+            <span class="text-lg leading-none">🔧</span>
+            <span id="m-interact-label" class="text-[8px] font-black mt-0.5 text-white tracking-tight">REPAIR</span>
+        </button>
+
+        <!-- Right Side Combat Cluster -->
+        <div class="absolute bottom-6 right-6 flex flex-col items-end gap-3 pointer-events-auto select-none z-20">
+            <!-- Top Utility Row: Deploy Toggle, Hook, Dash, Reload -->
+            <div class="flex items-center gap-2.5">
+                <button id="m-deploy-toggle" class="mobile-btn bg-amber-950/60 border-amber-500/40 text-amber-300 relative" style="width:52px; height:52px; font-size:10px;" title="Build Defenses">
+                    <span class="text-sm">🔨</span>
+                    <span class="text-[8px] font-black uppercase block">BUILD</span>
+                </button>
+                <button id="m-grapple" class="mobile-btn bg-cyan-950/60 border-cyan-500/40 text-cyan-300" style="width:52px; height:52px; font-size:10px;" title="Grapple Hook">
+                    <span class="text-sm">🪝</span>
+                    <span class="text-[8px] font-black uppercase block">HOOK</span>
+                </button>
+                <button id="m-dash" class="mobile-btn bg-indigo-950/60 border-indigo-500/40 text-indigo-300" style="width:52px; height:52px; font-size:10px;" title="Evasive Dash">
+                    <span class="text-sm">⚡</span>
+                    <span class="text-[8px] font-black uppercase block">DASH</span>
+                </button>
+                <button id="m-reload" class="mobile-btn bg-gray-800/80 border-white/20 text-gray-200" style="width:52px; height:52px; font-size:10px;" title="Reload Weapon">
+                    <span class="text-sm">🔄</span>
+                    <span class="text-[8px] font-black uppercase block">REL</span>
+                </button>
+            </div>
+
+            <!-- Primary Trigger Arc: Jump & Fire -->
+            <div class="flex items-center gap-4 mt-0.5">
+                <button id="m-jump" class="mobile-btn bg-emerald-950/60 border-2 border-emerald-500/60 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.3)] active:bg-emerald-600" style="width:76px; height:76px; font-size:24px;" title="Jump (W)">
+                    <span class="text-2xl font-black">⬆</span>
+                </button>
+                <button id="m-shoot" class="mobile-btn bg-gradient-to-tr from-rose-700 to-red-500 border-2 border-red-400 text-white shadow-[0_0_25px_rgba(239,68,68,0.45)] active:scale-95" style="width:84px; height:84px; font-size:16px;" title="Fire Weapon">
+                    <span class="text-lg font-black tracking-wider">FIRE</span>
+                </button>
             </div>
         </div>
     </div>
 
     <!-- UI Overlay: Perk Selection -->
-    <div id="ui-perks" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md flex flex-col items-center justify-center hidden z-30 p-6">
-        <span class="text-xs uppercase tracking-widest text-emerald-400 font-bold mb-2">Stage Clear</span>
-        <h2 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 mb-2 text-center tracking-tight">WAVE COMPLETED</h2>
-        <p id="perk-bonus-text" class="text-yellow-400 font-bold text-lg mb-8 text-center bg-yellow-500/10 border border-yellow-500/20 px-4 py-1.5 rounded-full">+ $150 Wave Clearance Bonus!</p>
-        <p class="text-gray-400 mb-8 text-center max-w-md text-sm">Select a mutation perk to boost your stats for the rest of the run:</p>
-        <div id="perk-container" class="flex flex-col md:flex-row gap-6 max-w-5xl w-full max-h-[60vh] overflow-y-auto p-2">
+    <div id="ui-perks" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md flex flex-col items-center justify-start md:justify-center hidden z-30 p-4 md:p-6 overflow-y-auto">
+        <span class="text-xs uppercase tracking-widest text-emerald-400 font-bold mb-1 md:mb-2">Stage Clear</span>
+        <h2 class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300 mb-1 md:mb-2 text-center tracking-tight">WAVE COMPLETED</h2>
+        <p id="perk-bonus-text" class="text-yellow-400 font-bold text-sm md:text-lg mb-2 md:mb-6 text-center bg-yellow-500/10 border border-yellow-500/20 px-4 py-1 rounded-full">+ $150 Wave Clearance Bonus!</p>
+        <p class="text-gray-400 mb-4 md:mb-8 text-center max-w-md text-xs md:text-sm">Select a mutation perk to boost your stats for the rest of the run:</p>
+        <div id="perk-container" class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 max-w-5xl w-full p-1">
             <!-- Perks injected here -->
         </div>
     </div>
 
     <!-- UI Overlay: Shop -->
-    <div id="ui-shop" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md flex flex-col items-center justify-start py-12 px-6 hidden z-30 overflow-y-auto">
-        <span class="text-xs uppercase tracking-widest text-yellow-400 font-bold mb-2">Military Arsenal</span>
-        <h2 class="text-5xl font-black text-white mb-2 mt-4 md:mt-0 tracking-tight">THE ARMORY</h2>
-        <p class="text-gray-400 mb-8 text-lg">Balance: <span id="shop-money" class="text-yellow-400 font-black">$0</span></p>
+    <div id="ui-shop" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md flex flex-col hidden z-30 overflow-hidden">
+        <!-- Top Header with Balance & Tabs -->
+        <div class="pt-3 md:pt-6 pb-2 md:pb-4 px-4 md:px-6 max-w-7xl w-full mx-auto flex flex-col items-center border-b border-white/5 flex-shrink-0">
+            <div class="flex items-center justify-between w-full mb-2 md:mb-3">
+                <div>
+                    <span class="text-[9px] md:text-[10px] uppercase tracking-widest text-yellow-400 font-black px-2.5 py-0.5 rounded-full bg-yellow-400/10 border border-yellow-400/20">Supply Depot</span>
+                    <h2 class="text-2xl md:text-4xl font-black text-white tracking-tight mt-0.5">THE ARMORY</h2>
+                </div>
+                <div class="glass-panel px-3.5 py-1.5 md:px-5 md:py-2.5 rounded-2xl flex items-center gap-2 md:gap-3 border border-yellow-500/20">
+                    <span class="text-[10px] md:text-xs uppercase tracking-widest text-gray-400 font-bold">Credits</span>
+                    <span class="text-xl md:text-3xl font-black text-yellow-400">$<span id="shop-money">0</span></span>
+                </div>
+            </div>
+
+            <!-- Tab Filters (Horizontal scrollable on mobile without ugly wraps) -->
+            <div class="flex overflow-x-auto no-scrollbar gap-2 w-full py-1 justify-start md:justify-center mt-1 scroll-smooth" id="shop-tabs">
+                <button onclick="window.setShopTab('all')" id="tab-all" class="flex-shrink-0 whitespace-nowrap px-4 py-2 text-xs font-black rounded-xl transition-all bg-emerald-500 text-white shadow-lg">ALL ARSENAL</button>
+                <button onclick="window.setShopTab('weapons')" id="tab-weapons" class="flex-shrink-0 whitespace-nowrap px-4 py-2 text-xs font-black rounded-xl transition-all bg-white/5 hover:bg-white/10 text-gray-400">FIREARMS</button>
+                <button onclick="window.setShopTab('defenses')" id="tab-defenses" class="flex-shrink-0 whitespace-nowrap px-4 py-2 text-xs font-black rounded-xl transition-all bg-white/5 hover:bg-white/10 text-gray-400">DEFENSES & TRAPS</button>
+                <button onclick="window.setShopTab('loadout')" id="tab-loadout" class="flex-shrink-0 whitespace-nowrap px-4 py-2 text-xs font-black rounded-xl transition-all bg-white/5 hover:bg-white/10 text-gray-400">MY LOADOUT</button>
+            </div>
+        </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl pb-24">
-            <!-- Shop Items injected here -->
+        <!-- Scrollable Items Area -->
+        <div class="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6 w-full">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 md:gap-5 w-full max-w-7xl mx-auto pb-36 md:pb-32">
+                <!-- Shop Items injected here -->
+            </div>
         </div>
 
-        <button onclick="nextWave()" class="fixed bottom-8 px-12 py-4 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xl rounded-2xl shadow-[0_8px_25px_rgba(16,185,129,0.3)] transition-all transform hover:scale-[1.03] active:scale-[0.97] z-40">
-            LAUNCH NEXT WAVE
-        </button>
+        <!-- Sticky Bottom Bar -->
+        <div class="fixed bottom-0 left-0 right-0 py-2.5 px-4 md:py-3 md:px-12 bg-gray-950/95 backdrop-blur-xl border-t border-white/10 flex justify-between items-center z-40">
+            <div class="hidden md:flex items-center gap-4 text-xs text-gray-400">
+                <span>Switch weapons: <kbd class="px-1.5 py-0.5 bg-white/10 rounded text-white font-mono">1 - 4</kbd></span>
+                <span>•</span>
+                <span>Deploy turrets: <kbd class="px-1.5 py-0.5 bg-white/10 rounded text-white font-mono">G</kbd> (Unlimited)</span>
+                <span>•</span>
+                <span>Mines: <kbd class="px-1.5 py-0.5 bg-white/10 rounded text-white font-mono">C</kbd></span>
+                <span>•</span>
+                <span>Barricades: <kbd class="px-1.5 py-0.5 bg-white/10 rounded text-white font-mono">F</kbd></span>
+            </div>
+            <div class="flex items-center gap-2.5 ml-auto md:ml-0">
+                <button onclick="window.quitToMenu()" class="px-4 py-2.5 md:px-5 md:py-3 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 font-bold text-xs rounded-xl transition-all">
+                    MAIN MENU
+                </button>
+                <button id="shop-action-btn" onclick="window.onShopActionClick()" class="px-5 py-2.5 md:px-8 md:py-3.5 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs md:text-lg rounded-xl shadow-[0_4px_20px_rgba(16,185,129,0.4)] transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                    LAUNCH NEXT WAVE &rarr;
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- UI Overlay: Game Over -->
-    <div id="ui-gameover" class="fixed inset-0 bg-red-950/95 backdrop-blur-md flex flex-col items-center justify-center hidden z-40 p-4">
-        <span class="text-xs uppercase tracking-widest text-red-500 font-bold mb-2">Simulation Terminated</span>
-        <h1 class="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-600 mb-4 text-center tracking-tight">YOU DIED</h1>
+    <div id="ui-gameover" class="fixed inset-0 bg-red-950/95 backdrop-blur-md flex flex-col items-center justify-start md:justify-center hidden z-40 p-4 overflow-y-auto">
+        <span class="text-xs uppercase tracking-widest text-red-500 font-bold mb-1 md:mb-2 mt-4 md:mt-0">Simulation Terminated</span>
+        <h1 class="text-4xl sm:text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-rose-600 mb-3 md:mb-4 text-center tracking-tight">YOU DIED</h1>
         
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-sm flex flex-col gap-3 text-center mb-8 border-red-500/10">
-            <p class="text-gray-400 text-sm">Survived until Wave: <span id="go-wave" class="text-emerald-400 font-black text-lg">1</span></p>
+        <div class="glass-panel p-4 md:p-6 rounded-2xl w-full max-w-sm flex flex-col gap-2.5 md:gap-3 text-center mb-4 md:mb-8 border-red-500/10">
+            <p id="go-mode-text" class="text-xs font-bold text-gray-400 uppercase tracking-wider">Mode: Wave Survival</p>
+            <p class="text-gray-400 text-sm"><span id="go-stat-label">Survived until Wave:</span> <span id="go-wave" class="text-emerald-400 font-black text-lg">1</span></p>
+            <p class="text-gray-400 text-sm">Undead Slain: <span id="go-kills" class="text-red-400 font-black text-lg">0</span></p>
             <p class="text-gray-400 text-sm">Final Score: <span id="go-score" class="text-yellow-400 font-black text-lg">0</span></p>
         </div>
 
-        <button onclick="location.reload()" class="px-8 py-4 bg-white text-gray-950 font-black rounded-2xl text-xl hover:bg-gray-200 transition-colors shadow-2xl">
-            RETRY MISSION
-        </button>
+        <div class="flex gap-3 md:gap-4 mb-4">
+            <button onclick="window.restartCurrentMode()" class="px-5 py-3 md:px-6 md:py-4 bg-white text-gray-950 font-black rounded-2xl text-sm md:text-lg hover:bg-gray-200 transition-colors shadow-2xl">
+                RETRY MISSION
+            </button>
+            <button onclick="window.quitToMenu()" class="px-5 py-3 md:px-6 md:py-4 bg-red-600 text-white font-black rounded-2xl text-sm md:text-lg hover:bg-red-500 transition-colors shadow-2xl">
+                MAIN MENU
+            </button>
+        </div>
     </div>
 
     <!-- UI Overlay: Pause -->
-    <div id="ui-pause" class="fixed inset-0 bg-gray-950/90 backdrop-blur-sm flex flex-col items-center justify-center hidden z-40">
-        <h1 class="text-5xl font-black text-white mb-10 tracking-widest">PAUSED</h1>
-        <div class="flex flex-col gap-4 w-64">
-            <button onclick="togglePause()" class="px-6 py-4 bg-emerald-500 text-white rounded-2xl font-bold text-lg hover:bg-emerald-400 transition-all shadow-[0_4px_15px_rgba(16,185,129,0.2)]">RESUME</button>
-            <button onclick="location.reload()" class="px-6 py-4 bg-red-600 text-white rounded-2xl font-bold text-lg hover:bg-red-500 transition-all">QUIT TO MENU</button>
+    <div id="ui-pause" class="fixed inset-0 bg-gray-950/90 backdrop-blur-sm flex flex-col items-center justify-center hidden z-40 p-4 overflow-y-auto">
+        <h1 class="text-4xl md:text-5xl font-black text-white mb-6 md:mb-10 tracking-widest">PAUSED</h1>
+        <div class="flex flex-col gap-3 md:gap-4 w-56 md:w-64">
+            <button onclick="togglePause()" class="px-5 py-3 md:px-6 md:py-4 bg-emerald-500 text-white rounded-2xl font-bold text-base md:text-lg hover:bg-emerald-400 transition-all shadow-[0_4px_15px_rgba(16,185,129,0.2)]">RESUME</button>
+            <button onclick="window.quitToMenu()" class="px-5 py-3 md:px-6 md:py-4 bg-red-600 text-white rounded-2xl font-bold text-base md:text-lg hover:bg-red-500 transition-all">QUIT TO MENU</button>
+        </div>
+    </div>
+
+    <!-- UI Overlay: Main Menu -->
+    <div id="ui-menu" class="fixed inset-0 bg-gray-950/95 backdrop-blur-xl flex flex-col items-center justify-start md:justify-center z-50 p-4 md:p-6 overflow-y-auto">
+        <div class="max-w-4xl w-full flex flex-col items-center text-center py-4 md:py-0">
+            <span class="text-[10px] md:text-xs uppercase tracking-widest text-emerald-400 font-extrabold px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-2 md:mb-3">
+                Tactical Undead Survival
+            </span>
+            <h1 class="text-3xl sm:text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-200 to-cyan-400 tracking-tight mb-2 md:mb-3 mt-1 md:mt-0">
+                BUNNY VS. UNDEAD
+            </h1>
+            <p class="text-gray-400 max-w-lg text-xs md:text-base mb-4 md:mb-8">
+                Master movement tech, deploy automated fortifications, and battle infinite hordes. Choose your mode:
+            </p>
+
+            <!-- Mode Selection Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full max-w-3xl mb-6 md:mb-8">
+                <!-- Mode 1: Wave Survival -->
+                <div onclick="window.startMode('survival')" class="perk-card p-5 md:p-8 rounded-2xl md:rounded-3xl cursor-pointer text-left flex flex-col justify-between border border-white/10 hover:border-emerald-500/40 transition-all hover:scale-[1.01] group shadow-2xl">
+                    <div>
+                        <div class="flex items-center justify-between mb-3 md:mb-4">
+                            <span class="text-[10px] uppercase tracking-widest font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                                Campaign
+                            </span>
+                            <span class="text-xl">🏆</span>
+                        </div>
+                        <h2 class="text-xl md:text-3xl font-black text-white mb-1.5 md:mb-2 group-hover:text-emerald-400 transition-colors">
+                            WAVE SURVIVAL
+                        </h2>
+                        <p class="text-gray-400 text-xs md:text-sm leading-relaxed mb-4 md:mb-6">
+                            Progress through escalating waves. Earn clearance rewards, draft mutation perks, and defeat mutator bosses every 10 waves.
+                        </p>
+                        <ul class="text-xs text-gray-400 space-y-1 mb-4 md:mb-6">
+                            <li class="flex items-center gap-2">✓ Wave-based tactical progression</li>
+                            <li class="flex items-center gap-2">✓ Post-wave mutation perk drafting</li>
+                            <li class="flex items-center gap-2">✓ Armory supply runs between rounds</li>
+                        </ul>
+                    </div>
+                    <button class="w-full py-3 md:py-3.5 bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xs md:text-sm uppercase tracking-wider rounded-xl md:rounded-2xl shadow-lg transition-all">
+                        PLAY WAVE SURVIVAL &rarr;
+                    </button>
+                </div>
+
+                <!-- Mode 2: Sandbox Mayhem -->
+                <div onclick="window.startMode('sandbox')" class="perk-card p-5 md:p-8 rounded-2xl md:rounded-3xl cursor-pointer text-left flex flex-col justify-between border border-yellow-500/20 hover:border-yellow-500/50 transition-all hover:scale-[1.01] group shadow-2xl bg-gradient-to-br from-yellow-950/20 to-gray-900/90">
+                    <div>
+                        <div class="flex items-center justify-between mb-3 md:mb-4">
+                            <span class="text-[10px] uppercase tracking-widest font-black text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 px-2.5 py-0.5 rounded-full">
+                                Unlimited Sandbox
+                            </span>
+                            <span class="text-xl">⚡</span>
+                        </div>
+                        <h2 class="text-xl md:text-3xl font-black text-white mb-1.5 md:mb-2 group-hover:text-yellow-400 transition-colors">
+                            SANDBOX MAYHEM
+                        </h2>
+                        <p class="text-gray-400 text-xs md:text-sm leading-relaxed mb-4 md:mb-6">
+                            Infinite money ($∞) with endless scaling horde. Zombies spawn continuously and grow faster and tougher. Open the Armory shop anytime!
+                        </p>
+                        <ul class="text-xs text-gray-400 space-y-1 mb-4 md:mb-6">
+                            <li class="flex items-center gap-2">✓ Infinite Credits ($∞) for all gear</li>
+                            <li class="flex items-center gap-2">✓ Endless horde with time-scaling difficulty</li>
+                            <li class="flex items-center gap-2">✓ Instant Armory shop on mobile button / ESC</li>
+                        </ul>
+                    </div>
+                    <button class="w-full py-3 md:py-3.5 bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-black text-xs md:text-sm uppercase tracking-wider rounded-xl md:rounded-2xl shadow-lg transition-all">
+                        ENTER SANDBOX MODE &rarr;
+                    </button>
+                </div>
+            </div>
+
+            <!-- Controls reminder (Responsive for both Mobile & Desktop) -->
+            <div class="glass-panel px-4 py-2.5 rounded-2xl border border-white/5 flex flex-col items-center gap-1.5 max-w-xl">
+                <!-- Mobile Guide -->
+                <div class="flex md:hidden text-[10px] text-gray-300 flex-wrap justify-center gap-x-3 gap-y-1">
+                    <span>🕹️ <b class="text-white">Joystick:</b> Move & Drop</span>
+                    <span>🔥 <b class="text-white">Fire:</b> Auto-Aim / Drag-Aim</span>
+                    <span>🔨 <b class="text-white">Build:</b> Fortifications</span>
+                    <span>🪝 <b class="text-white">Hook:</b> Grapple</span>
+                    <span>⚡ <b class="text-white">Dash & Ult</b></span>
+                </div>
+                <!-- Desktop Keyboard Guide -->
+                <div class="hidden md:flex text-[11px] text-gray-400 flex-wrap justify-center gap-x-4 gap-y-1">
+                    <span><b class="text-gray-200">WASD:</b> Move / Jump / Drop</span>
+                    <span><b class="text-gray-200">Shift:</b> Dash</span>
+                    <span><b class="text-gray-200">Right Click:</b> Grapple</span>
+                    <span><b class="text-gray-200">S:</b> Grapple Slam</span>
+                    <span><b class="text-gray-200">1-4:</b> Weapons</span>
+                    <span><b class="text-gray-200">G:</b> Turret</span>
+                    <span><b class="text-gray-200">C:</b> Mine</span>
+                    <span><b class="text-gray-200">F:</b> Barricade</span>
+                    <span><b class="text-gray-200">Q:</b> Adrenaline</span>
+                    <span><b class="text-gray-200">ESC:</b> Pause / Shop</span>
+                </div>
+            </div>
         </div>
     </div>
 

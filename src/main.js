@@ -1,10 +1,11 @@
 import { gameState, isMobileCheck } from './state.js';
-import { GameState, MAP_WIDTH, MAP_HEIGHT } from './constants.js';
+import { GameState, MAP_WIDTH, MAP_HEIGHT, MAX_ACTIVE_TURRETS } from './constants.js';
 import { generateMap, platforms } from './physics.js';
 import { Player } from './entities/Player.js';
 import { Enemy } from './entities/Enemy.js';
 import { Turret } from './entities/Turret.js';
 import { Barricade } from './entities/Barricade.js';
+import { Landmine, NanoBeacon } from './entities/Deployable.js';
 import { CarePackage } from './entities/CarePackage.js';
 import { ExplosiveBarrel } from './entities/ExplosiveBarrel.js';
 import { createParticles, createFloatingText } from './effects.js';
@@ -58,6 +59,88 @@ export function startWave() {
     updateHUD();
 }
 
+export function startMode(mode = 'survival') {
+    gameState.gameMode = mode;
+    gameState.score = 0;
+    gameState.totalKills = 0;
+    gameState.waveKills = 0;
+    gameState.comboCount = 0;
+    gameState.comboTimer = 0;
+    gameState.adrenalineActive = false;
+    gameState.adrenalineTimer = 0;
+    gameState.enemies = [];
+    gameState.projectiles = [];
+    gameState.enemyProjectiles = [];
+    gameState.pickups = [];
+    gameState.turrets = [];
+    gameState.barricades = [];
+    gameState.landmines = [];
+    gameState.beacons = [];
+    gameState.carePackages = [];
+    gameState.companions = [];
+    gameState.particles = [];
+    gameState.slashes = [];
+
+    gameState.player = new Player();
+
+    if (mode === 'sandbox') {
+        gameState.money = 9999999;
+        gameState.sandboxTime = 0;
+        gameState.sandboxBossTimer = 75.0;
+        gameState.killsNeeded = Infinity;
+        gameState.currentWave = 1;
+        gameState.spawnTimer = 1.0;
+        gameState.isRaining = false;
+        gameState.player.speed = 400;
+    } else {
+        gameState.money = 0;
+        gameState.currentWave = 1;
+        gameState.killsNeeded = 10;
+        gameState.spawnTimer = 1.5;
+        gameState.isRaining = false;
+        gameState.player.speed = 400;
+    }
+
+    // Reset barrels
+    gameState.barrels = [];
+    let numBarrels = 4 + Math.floor(Math.random() * 3);
+    for(let i = 0; i < numBarrels; i++) {
+        let p = platforms[Math.floor(Math.random() * (platforms.length - 1)) + 1];
+        if (p) {
+            let spawnX = p.x + Math.random() * (p.width - 24);
+            let spawnY = p.y - 32;
+            gameState.barrels.push(new ExplosiveBarrel(spawnX, spawnY));
+        }
+    }
+
+    // Hide menus & show HUD
+    const menuEl = document.getElementById('ui-menu');
+    if (menuEl) menuEl.classList.add('hidden');
+    const goEl = document.getElementById('ui-gameover');
+    if (goEl) goEl.classList.add('hidden');
+    const pauseEl = document.getElementById('ui-pause');
+    if (pauseEl) pauseEl.classList.add('hidden');
+    const shopEl = document.getElementById('ui-shop');
+    if (shopEl) shopEl.classList.add('hidden');
+    const perksEl = document.getElementById('ui-perks');
+    if (perksEl) perksEl.classList.add('hidden');
+    const hudEl = document.getElementById('ui-hud');
+    if (hudEl) hudEl.classList.remove('hidden');
+
+    gameState.currentState = GameState.PLAYING;
+    lastTimeRef.value = performance.now();
+    updateDeviceUI();
+    updateHUD();
+}
+
+export function restartCurrentMode() {
+    startMode(gameState.gameMode || 'survival');
+}
+
+export function onGameResumed() {
+    lastTimeRef.value = performance.now();
+}
+
 function handleGrappleInput(forceState) {
     const player = gameState.player;
     if (!player) return;
@@ -103,13 +186,40 @@ function handleGrappleInput(forceState) {
 function handlePlaceTurret() {
     const player = gameState.player;
     if (!player) return;
-    if ((player.turretInventory || 0) > 0) {
-        player.turretInventory--;
-        if (!player.turretInventoryList) player.turretInventoryList = [];
-        let tType = player.turretInventoryList.pop() || 'bullet';
-        gameState.turrets.push(new Turret(player.x, player.y, tType));
-        updateHUD();
+    if ((player.turretInventory || 0) <= 0) return;
+
+    if (Number.isFinite(MAX_ACTIVE_TURRETS) && gameState.turrets.length >= MAX_ACTIVE_TURRETS) {
+        createFloatingText(player.x + player.width/2, player.y - 20, `TURRET LIMIT (${MAX_ACTIVE_TURRETS}/${MAX_ACTIVE_TURRETS})`, '#f59e0b');
+        return;
     }
+
+    player.turretInventory--;
+    if (!player.turretInventoryList) player.turretInventoryList = [];
+    let tType = player.turretInventoryList.pop() || 'bullet';
+
+    // Position turret grounded on nearest platform below player
+    let tx = player.x + (player.facingRight ? 35 : -35);
+    let ty = player.y + player.height - 30;
+    
+    let footX = tx + 10;
+    let footY = player.y + player.height;
+    let closestPlatY = null;
+    for (let p of platforms) {
+        if (footX >= p.x && footX <= p.x + p.width && p.y >= footY - 15) {
+            if (closestPlatY === null || p.y < closestPlatY) {
+                closestPlatY = p.y;
+            }
+        }
+    }
+    if (closestPlatY !== null) {
+        ty = closestPlatY - 30;
+    }
+
+    gameState.turrets.push(new Turret(tx, ty, tType));
+    createParticles(tx + 10, ty + 15, 12, '#38bdf8', 100);
+    let limitStr = Number.isFinite(MAX_ACTIVE_TURRETS) ? ` (${gameState.turrets.length}/${MAX_ACTIVE_TURRETS})` : ` (#${gameState.turrets.length})`;
+    createFloatingText(tx + 10, ty - 15, `TURRET PLACED${limitStr}`, '#38bdf8');
+    updateHUD();
 }
 
 function handleUltimate() {
@@ -130,13 +240,95 @@ function handlePlaceBarricade() {
     const player = gameState.player;
     if (!player) return;
     if ((player.barricadeInventory || 0) > 0) {
-        let bx = player.x + player.width/2 - 20;
+        let bx = player.x + (player.facingRight ? 40 : -50);
         let by = player.y + player.height - 40;
+        
+        let footX = bx + 20;
+        let footY = player.y + player.height;
+        let closestPlatY = null;
+        for (let p of platforms) {
+            if (footX >= p.x && footX <= p.x + p.width && p.y >= footY - 15) {
+                if (closestPlatY === null || p.y < closestPlatY) {
+                    closestPlatY = p.y;
+                }
+            }
+        }
+        if (closestPlatY !== null) {
+            by = closestPlatY - 40;
+        }
+
         gameState.barricades.push(new Barricade(bx, by));
         player.barricadeInventory--;
+        createParticles(bx + 20, by + 20, 10, '#f59e0b', 80);
+        createFloatingText(bx + 20, by - 10, "BARRICADE DEPLOYED", '#f59e0b');
         updateHUD();
     }
 }
+
+export function handlePlaceLandmine() {
+    const player = gameState.player;
+    if (!player) return;
+    if ((player.landmineInventory || 0) <= 0) return;
+
+    let mx = player.x + (player.facingRight ? 25 : -25);
+    let my = player.y + player.height - 10;
+
+    let footX = mx + 12;
+    let footY = player.y + player.height;
+    let closestPlatY = null;
+    for (let p of platforms) {
+        if (footX >= p.x && footX <= p.x + p.width && p.y >= footY - 15) {
+            if (closestPlatY === null || p.y < closestPlatY) {
+                closestPlatY = p.y;
+            }
+        }
+    }
+    if (closestPlatY !== null) {
+        my = closestPlatY - 10;
+    }
+
+    gameState.landmines.push(new Landmine(mx, my));
+    player.landmineInventory--;
+    createParticles(mx + 12, my + 5, 8, '#ef4444', 80);
+    createFloatingText(mx + 12, my - 15, "MINE ARMED", '#ef4444');
+    updateHUD();
+}
+
+export function handlePlaceBeacon() {
+    const player = gameState.player;
+    if (!player) return;
+    if ((player.beaconInventory || 0) <= 0) return;
+
+    let bx = player.x + (player.facingRight ? 30 : -30);
+    let by = player.y + player.height - 48;
+
+    let footX = bx + 14;
+    let footY = player.y + player.height;
+    let closestPlatY = null;
+    for (let p of platforms) {
+        if (footX >= p.x && footX <= p.x + p.width && p.y >= footY - 15) {
+            if (closestPlatY === null || p.y < closestPlatY) {
+                closestPlatY = p.y;
+            }
+        }
+    }
+    if (closestPlatY !== null) {
+        by = closestPlatY - 48;
+    }
+
+    gameState.beacons.push(new NanoBeacon(bx, by));
+    player.beaconInventory--;
+    createParticles(bx + 14, by + 24, 12, '#38bdf8', 120);
+    createFloatingText(bx + 14, by - 15, "BEACON DEPLOYED", '#38bdf8');
+    updateHUD();
+}
+
+window.handlePlaceLandmine = handlePlaceLandmine;
+window.handlePlaceBeacon = handlePlaceBeacon;
+window.handlePlaceTurret = handlePlaceTurret;
+window.handlePlaceBarricade = handlePlaceBarricade;
+window.handleUltimate = handleUltimate;
+window.handleInteract = handleInteract;
 
 function handleInteract() {
     const player = gameState.player;
@@ -233,21 +425,51 @@ function updateGame(dt) {
         mouse.worldX = mouse.x + gameState.camera.x;
         mouse.worldY = mouse.y + gameState.camera.y;
     } else {
+        let px = player.x + player.width/2;
+        let py = player.y + player.height/2;
+
         if(mobileState.isMobileShooting) {
-            let target = null, minDist = 800;
-            gameState.enemies.forEach(e => {
-                if(e.dead) return;
-                let d = Math.hypot((e.x+e.width/2) - (player.x+player.width/2), (e.y+e.height/2) - (player.y+player.height/2));
-                if(d < minDist) { minDist = d; target = e; }
-            });
-            if(target) {
-                mouse.worldX = target.x + target.width/2;
-                mouse.worldY = target.y + target.height/2;
+            if (mobileState.manualAim) {
+                // Precision Twin-Stick Manual Aiming
+                mobileState.activeTarget = null;
+                mouse.worldX = px + Math.cos(mobileState.aimAngle) * 450;
+                mouse.worldY = py + Math.sin(mobileState.aimAngle) * 450;
+                player.facingRight = (Math.cos(mobileState.aimAngle) >= 0);
             } else {
-                mouse.worldX = player.x + player.width/2 + (player.facingRight ? 200 : -200);
-                mouse.worldY = player.y + player.height/2;
+                // Smart Auto-Aim: target nearest priority enemy / boss
+                let target = null, bestScore = Infinity;
+
+                gameState.enemies.forEach(e => {
+                    if(e.dead) return;
+                    let ex = e.x + e.width/2;
+                    let ey = e.y + e.height/2;
+                    let d = Math.hypot(ex - px, ey - py);
+                    if (d < 850) {
+                        // Priority weighting: Bosses (x0.35 = ~3x priority), flying bats/spitters (x0.65)
+                        let weight = 1.0;
+                        if (e.isBoss) weight = 0.35;
+                        else if (e.type === 'bat' || e.type === 'spitter') weight = 0.65;
+                        
+                        let score = d * weight;
+                        if (score < bestScore) {
+                            bestScore = score;
+                            target = e;
+                        }
+                    }
+                });
+
+                mobileState.activeTarget = target;
+                if(target) {
+                    mouse.worldX = target.x + target.width/2;
+                    mouse.worldY = target.y + target.height/2;
+                    player.facingRight = (mouse.worldX >= px);
+                } else {
+                    mouse.worldX = px + (player.facingRight ? 200 : -200);
+                    mouse.worldY = py;
+                }
             }
         } else {
+            mobileState.activeTarget = null;
             mouse.worldX = player.x + player.width/2 + (player.facingRight ? 200 : -200);
             mouse.worldY = player.y + player.height/2;
         }
@@ -275,34 +497,107 @@ function updateGame(dt) {
         }
     }
 
-    if (gameState.waveKills < gameState.killsNeeded) {
-        gameState.spawnTimer -= worldDt;
-        if (gameState.spawnTimer <= 0) {
-            gameState.spawnTimer = Math.max(0.5, 2.0 - (gameState.currentWave * 0.1));
-            let spawnPlat = platforms[Math.floor(Math.random() * (platforms.length-1)) + 1]; 
-            let ex = spawnPlat.x + spawnPlat.width/2;
-            let ey = spawnPlat.y - 50;
+    if (gameState.gameMode === 'sandbox') {
+        gameState.sandboxTime += worldDt;
+        gameState.sandboxBossTimer -= worldDt;
 
-            if (Math.hypot(ex - player.x, ey - player.y) > 400) {
-                let type = 'normal', r = Math.random();
-                if (gameState.currentWave % 10 === 0 && gameState.waveKills === 0) {
-                    type = 'boss';
-                } else {
-                    if (gameState.currentWave > 1) {
-                        if (r < 0.12 && gameState.currentWave > 2) type = 'speedy';
-                        else if (r < 0.25 && gameState.currentWave > 2) type = 'tank';
-                        else if (r < 0.38 && gameState.currentWave > 3) type = 'thrower';
-                        else if (r < 0.51 && gameState.currentWave > 4) type = 'jumper';
-                        else if (r < 0.64 && gameState.currentWave > 5) type = 'mutant';
-                        else if (r < 0.77 && gameState.currentWave > 6) type = 'spitter';
-                        else if (r < 0.90 && gameState.currentWave > 7) type = 'gargoyle';
-                    }
-                }
-                gameState.enemies.push(new Enemy(ex, ey, type));
+        // Periodic boss spawns in sandbox
+        if (gameState.sandboxBossTimer <= 0) {
+            gameState.sandboxBossTimer = 75.0 + Math.random() * 15.0;
+            let spawnPlat = platforms[Math.floor(Math.random() * (platforms.length - 1)) + 1];
+            if (spawnPlat) {
+                let ex = spawnPlat.x + spawnPlat.width / 2;
+                let ey = spawnPlat.y - 70;
+                let bossTypes = ['boss_behemoth', 'boss_broodmother', 'boss_necromancer', 'boss'];
+                let chosenBoss = bossTypes[Math.floor(Math.random() * bossTypes.length)];
+                gameState.enemies.push(new Enemy(ex, ey, chosenBoss));
+                createFloatingText(player.x + player.width / 2, player.y - 45, "WARNING: BOSS INBOUND!", '#ef4444');
+                gameState.camera.shake = 14;
             }
         }
-    } else if (gameState.enemies.length === 0) {
-        import('./ui.js').then(m => m.showPerks());
+
+        // Periodic explosive barrel replenishment in sandbox
+        if (gameState.barrels.length < 3 && Math.random() < 0.005) {
+            let p = platforms[Math.floor(Math.random() * (platforms.length - 1)) + 1];
+            if (p) gameState.barrels.push(new ExplosiveBarrel(p.x + Math.random() * (p.width - 24), p.y - 32));
+        }
+
+        // Spawn interval gets faster over time: 1.8s down to 0.25s
+        let spawnInterval = Math.max(0.25, 1.8 - (gameState.sandboxTime / 60) * 0.25);
+        // Maximum concurrent enemies scales with time: from 14 up to 50
+        let maxConcurrent = Math.min(50, 14 + Math.floor(gameState.sandboxTime / 15) * 2);
+
+        gameState.spawnTimer -= worldDt;
+        if (gameState.spawnTimer <= 0 && gameState.enemies.length < maxConcurrent) {
+            gameState.spawnTimer = spawnInterval;
+
+            // At higher survival times, spawn batches of 1-3 zombies at once
+            let batch = 1 + (gameState.sandboxTime > 90 ? (Math.random() < 0.45 ? 2 : 1) : 0);
+            for (let b = 0; b < batch && gameState.enemies.length < maxConcurrent; b++) {
+                let spawnPlat = platforms[Math.floor(Math.random() * (platforms.length - 1)) + 1];
+                let ex = spawnPlat.x + spawnPlat.width / 2;
+                let ey = spawnPlat.y - 50;
+
+                if (Math.hypot(ex - player.x, ey - player.y) > 350) {
+                    let type = 'normal';
+                    let r = Math.random();
+                    let elapsed = gameState.sandboxTime;
+
+                    if (elapsed > 10 && r < 0.15) type = 'swarmer';
+                    else if (elapsed > 20 && r < 0.28) type = 'speedy';
+                    else if (elapsed > 35 && r < 0.40) type = 'shield';
+                    else if (elapsed > 50 && r < 0.52) type = 'tank';
+                    else if (elapsed > 65 && r < 0.62) type = 'exploder';
+                    else if (elapsed > 80 && r < 0.72) type = 'thrower';
+                    else if (elapsed > 95 && r < 0.80) type = 'shock';
+                    else if (elapsed > 110 && r < 0.88) type = 'stalker';
+                    else if (elapsed > 125 && r < 0.94) type = 'jumper';
+                    else if (elapsed > 140 && r < 0.97) type = 'mutant';
+                    else if (elapsed > 155) type = (r < 0.5 ? 'spitter' : 'gargoyle');
+
+                    gameState.enemies.push(new Enemy(ex, ey, type));
+                }
+            }
+        }
+        updateHUD();
+    } else {
+        if (gameState.waveKills < gameState.killsNeeded) {
+            gameState.spawnTimer -= worldDt;
+            if (gameState.spawnTimer <= 0) {
+                gameState.spawnTimer = Math.max(0.5, 2.0 - (gameState.currentWave * 0.1));
+                let spawnPlat = platforms[Math.floor(Math.random() * (platforms.length-1)) + 1]; 
+                let ex = spawnPlat.x + spawnPlat.width/2;
+                let ey = spawnPlat.y - 50;
+
+                if (Math.hypot(ex - player.x, ey - player.y) > 400) {
+                    let type = 'normal', r = Math.random();
+                    if (gameState.currentWave % 10 === 0 && gameState.waveKills === 0) {
+                        let bossTier = (gameState.currentWave / 10) % 3;
+                        if (bossTier === 1) type = 'boss_behemoth';
+                        else if (bossTier === 2) type = 'boss_broodmother';
+                        else type = 'boss_necromancer';
+                    } else {
+                        let wave = gameState.currentWave;
+                        if (wave > 1) {
+                            if (r < 0.12) type = 'swarmer';
+                            else if (r < 0.22 && wave > 2) type = 'speedy';
+                            else if (r < 0.32 && wave > 2) type = 'shield';
+                            else if (r < 0.42 && wave > 3) type = 'tank';
+                            else if (r < 0.52 && wave > 3) type = 'exploder';
+                            else if (r < 0.62 && wave > 4) type = 'thrower';
+                            else if (r < 0.72 && wave > 5) type = 'shock';
+                            else if (r < 0.80 && wave > 5) type = 'jumper';
+                            else if (r < 0.88 && wave > 6) type = 'stalker';
+                            else if (r < 0.94 && wave > 7) type = 'mutant';
+                            else if (wave > 7) type = (r < 0.97 ? 'spitter' : 'gargoyle');
+                        }
+                    }
+                    gameState.enemies.push(new Enemy(ex, ey, type));
+                }
+            }
+        } else if (gameState.enemies.length === 0) {
+            import('./ui.js').then(m => m.showPerks());
+        }
     }
 
     for (let i = gameState.enemies.length - 1; i >= 0; i--) {
@@ -324,6 +619,18 @@ function updateGame(dt) {
     for (let i = gameState.barricades.length - 1; i >= 0; i--) {
         if (gameState.barricades[i].dead) {
             gameState.barricades.splice(i, 1);
+        }
+    }
+    for (let i = gameState.landmines.length - 1; i >= 0; i--) {
+        gameState.landmines[i].update(worldDt);
+        if (gameState.landmines[i].dead) {
+            gameState.landmines.splice(i, 1);
+        }
+    }
+    for (let i = gameState.beacons.length - 1; i >= 0; i--) {
+        gameState.beacons[i].update(worldDt);
+        if (gameState.beacons[i].dead) {
+            gameState.beacons.splice(i, 1);
         }
     }
     for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
@@ -379,6 +686,8 @@ function drawGame() {
 
     gameState.turrets.forEach(t => t.draw(ctx));
     gameState.barricades.forEach(b => b.draw(ctx));
+    gameState.landmines.forEach(m => m.draw(ctx));
+    gameState.beacons.forEach(b => b.draw(ctx));
     gameState.carePackages.forEach(cp => cp.draw(ctx));
     gameState.pickups.forEach(p => p.draw(ctx));
     gameState.barrels.forEach(b => b.draw(ctx));
@@ -466,10 +775,15 @@ function drawGame() {
                 ctx.rotate(angle);
                 
                 let arrowColor = '#ef4444';
-                if (e.type === 'speedy') arrowColor = '#06b6d4';
+                if (e.isBoss) arrowColor = '#f43f5e';
+                else if (e.type === 'speedy') arrowColor = '#06b6d4';
                 else if (e.type === 'spitter') arrowColor = '#a3e635';
-                else if (e.type === 'boss') arrowColor = '#f43f5e';
                 else if (e.type === 'gargoyle') arrowColor = '#a78bfa';
+                else if (e.type === 'exploder') arrowColor = '#f97316';
+                else if (e.type === 'shield') arrowColor = '#64748b';
+                else if (e.type === 'shock') arrowColor = '#38bdf8';
+                else if (e.type === 'stalker') arrowColor = '#818cf8';
+                else if (e.type === 'swarmer') arrowColor = '#84cc16';
                 
                 ctx.fillStyle = arrowColor;
                 ctx.strokeStyle = '#000000';
@@ -529,6 +843,66 @@ function drawGame() {
         ctx.moveTo(mouse.x-15, mouse.y); ctx.lineTo(mouse.x+15, mouse.y);
         ctx.moveTo(mouse.x, mouse.y-15); ctx.lineTo(mouse.x, mouse.y+15);
         ctx.stroke();
+    } else if (mobileState.manualAim && mobileState.isMobileShooting && gameState.player) {
+        // Precision Twin-Stick Drag Aim Reticle & Direction Line
+        const px = (gameState.player.x + gameState.player.width/2) - gameState.camera.x;
+        const py = (gameState.player.y + gameState.player.height/2) - gameState.camera.y;
+        const targetScreenX = mouse.worldX - gameState.camera.x;
+        const targetScreenY = mouse.worldY - gameState.camera.y;
+
+        ctx.save();
+        // Laser guide line
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.45)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(targetScreenX, targetScreenY);
+        ctx.stroke();
+
+        // Directional reticle ring
+        ctx.setLineDash([]);
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(targetScreenX, targetScreenY, 9, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(targetScreenX, targetScreenY, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    } else if (mobileState.activeTarget && !mobileState.activeTarget.dead) {
+        const t = mobileState.activeTarget;
+        const tx = (t.x + t.width/2) - gameState.camera.x;
+        const ty = (t.y + t.height/2) - gameState.camera.y;
+        const r = Math.max(t.width, t.height) / 2 + 10;
+        
+        ctx.save();
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#ef4444';
+        ctx.shadowBlur = 8;
+        
+        const bSize = 6;
+        ctx.beginPath();
+        // Top-left bracket
+        ctx.moveTo(tx - r, ty - r + bSize); ctx.lineTo(tx - r, ty - r); ctx.lineTo(tx - r + bSize, ty - r);
+        // Top-right bracket
+        ctx.moveTo(tx + r - bSize, ty - r); ctx.lineTo(tx + r, ty - r); ctx.lineTo(tx + r, ty - r + bSize);
+        // Bottom-left bracket
+        ctx.moveTo(tx - r, ty + r - bSize); ctx.lineTo(tx - r, ty + r); ctx.lineTo(tx - r + bSize, ty + r);
+        // Bottom-right bracket
+        ctx.moveTo(tx + r - bSize, ty + r); ctx.lineTo(tx + r, ty + r); ctx.lineTo(tx + r, ty + r - bSize);
+        ctx.stroke();
+        
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+        ctx.beginPath();
+        ctx.arc(tx, ty, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
     }
 
     // Draw "E" interact hint near turrets/barricades within range
@@ -548,8 +922,10 @@ function drawGame() {
                 ctx.save();
                 ctx.font = 'bold 11px Outfit';
                 ctx.textAlign = 'center';
-                ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                ctx.fillRoundRect(sx - 22, sy - 14, 44, 18, 6);
+                ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                ctx.beginPath();
+                ctx.roundRect(sx - 28, sy - 14, 56, 18, 6);
+                ctx.fill();
                 ctx.fillStyle = '#10b981';
                 ctx.fillText(obj.isBarricade ? '[E] Repair' : '[E] Upgrade', sx, sy);
                 ctx.restore();
@@ -569,13 +945,32 @@ function gameLoop() {
         updateGame(dt); drawGame();
     } else if (gameState.currentState === GameState.PAUSED) {
         drawGame(); ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0, 0, cw, ch);
+    } else if (gameState.currentState === GameState.MENU) {
+        drawGame(); ctx.fillStyle = 'rgba(3, 7, 18, 0.85)'; ctx.fillRect(0, 0, cw, ch);
     }
 }
 
 // Bootstrap
 generateMap();
 gameState.player = new Player();
-initInput(handleGrappleInput, togglePause, isMobileCheck, () => gameState.currentState, GameState, handlePlaceTurret, handleUltimate, handlePlaceBarricade, handleInteract);
-setupMobileControls(handleGrappleInput, isMobileCheck, () => gameState.currentState, GameState, togglePause);
-startWave();
+initInput(handleGrappleInput, togglePause, isMobileCheck, () => gameState.currentState, GameState, handlePlaceTurret, handleUltimate, handlePlaceBarricade, handleInteract, handlePlaceLandmine, handlePlaceBeacon);
+setupMobileControls(
+    handleGrappleInput, 
+    isMobileCheck, 
+    () => gameState.currentState, 
+    GameState, 
+    togglePause,
+    handlePlaceTurret,
+    handleUltimate,
+    handlePlaceBarricade,
+    handleInteract,
+    handlePlaceLandmine,
+    handlePlaceBeacon
+);
+gameState.currentState = GameState.MENU;
+const menuEl = document.getElementById('ui-menu');
+if (menuEl) menuEl.classList.remove('hidden');
+const hudEl = document.getElementById('ui-hud');
+if (hudEl) hudEl.classList.add('hidden');
+updateDeviceUI();
 gameLoop();

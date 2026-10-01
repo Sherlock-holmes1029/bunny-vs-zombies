@@ -28,7 +28,7 @@ export class Player extends Rect {
         this.perks = { lifesteal: 0, reloadMult: 1, dmgMult: 1, speedMult: 1, droneRate: 1.0, droneDmg: 1.0, droneMulti: 1 };
         
         this.weapons = [
-            { id: 'pistol', name: 'Pistol', slot: 0, dmg: 40, fireRate: 0.12, maxAmmo: 30, reloadTime: 0.8, ammo: 30, reloading: false, reloadTimer: 0, cd: 0, spread: 0.02, color: '#9ca3af', type: 'semi', attachments: { laser: false, extMags: false, suppressor: false } },
+            { id: 'pistol', name: 'Pistol', slot: 0, dmg: 40, fireRate: 0.12, maxAmmo: 30, reloadTime: 0.8, ammo: 30, reloading: false, reloadTimer: 0, cd: 0, spread: 0.02, color: '#9ca3af', type: 'semi', attachments: { laser: false, extMags: false, suppressor: false }, lvlDmg: 0, lvlRate: 0, lvlAmmo: 0 },
             null, null, null 
         ];
         this.currentWeaponIndex = 0;
@@ -36,6 +36,8 @@ export class Player extends Rect {
         this.invulnerableTimer = 0;
         this.turretInventory = 0;
         this.barricadeInventory = 0;
+        this.landmineInventory = 0;
+        this.beaconInventory = 0;
         this.maxShield = 50;
         this.shield = 50;
         this.shieldRegenTimer = 0;
@@ -61,7 +63,7 @@ export class Player extends Rect {
             }
         }
         
-        if (keys['shift'] && this.dashCooldownTimer <= 0 && (keys['a'] || keys['d'] || keys['arrowleft'] || keys['arrowright'])) {
+        if (keys['shift'] && this.dashCooldownTimer <= 0) {
             this.isDashing = true;
             this.dashTimer = this.dashDuration;
             this.dashCooldownTimer = this.dashCooldown;
@@ -128,6 +130,14 @@ export class Player extends Rect {
 
         let w = this.getWeapon();
         if(w) {
+            // Defensive recovery if ammo ever becomes undefined or NaN
+            if (w.id !== 'katana' && (w.ammo === undefined || isNaN(w.ammo))) {
+                w.ammo = w.maxAmmo || 30;
+                w.reloading = false;
+                w.reloadTimer = 0;
+                updateHUD();
+            }
+
             if (w.cd > 0) w.cd -= dt;
             
             if (w.reloading) {
@@ -137,10 +147,16 @@ export class Player extends Rect {
                 }
             } else if ((keys['r'] && w.ammo < w.maxAmmo) || (mouse.down && w.ammo <= 0 && w.id !== 'katana')) {
                 this.reloadWeapon(w);
-            } else if (mouse.down && w.cd <= 0 && w.ammo > 0) {
-                if(w.id === 'katana') this.swingMelee(w);
-                else if(w.id === 'flamethrower') this.shootFlame(w);
-                else this.shootBullet(w);
+            } else if (mouse.down && w.ammo > 0) {
+                if(w.id === 'katana' && w.cd <= 0) this.swingMelee(w);
+                else if(w.id === 'flamethrower' && w.cd <= 0) this.shootFlame(w);
+                else if(w.id === 'minigun') this.shootMinigun(w, dt);
+                else if(w.id === 'railgun' && w.cd <= 0) this.shootRailgun(w);
+                else if(w.id === 'cluster_launcher' && w.cd <= 0) this.shootCluster(w);
+                else if(w.id === 'cryo_ray' && w.cd <= 0) this.shootCryo(w);
+                else if(w.cd <= 0) this.shootBullet(w);
+            } else if (!mouse.down && w.id === 'minigun') {
+                w.spinSpeed = Math.max(0, (w.spinSpeed || 0) - dt * 2.5);
             }
         }
 
@@ -164,6 +180,107 @@ export class Player extends Rect {
         if(w.id === 'katana') return;
         w.reloading = true;
         w.reloadTimer = w.reloadTime * this.perks.reloadMult;
+        updateHUD();
+    }
+
+    shootMinigun(w, dt) {
+        w.spinSpeed = Math.min(1.0, (w.spinSpeed || 0) + dt * 1.8);
+        if (w.spinSpeed < 0.3) {
+            // Spooling up clicks
+            if (Math.random() < 0.2) createParticles(this.x + this.width/2, this.y + this.height/2, 1, '#94a3b8', 40);
+            return;
+        }
+
+        if (w.cd <= 0) {
+            let fireInterval = Math.max(0.045, w.fireRate - (w.spinSpeed * 0.065));
+            w.cd = fireInterval;
+            if (!gameState.adrenalineActive) w.ammo--;
+
+            let angle = Math.atan2(mouse.worldY - (this.y + this.height/2), mouse.worldX - (this.x + this.width/2));
+            angle += (Math.random() - 0.5) * (w.spread || 0.12);
+
+            gameState.projectiles.push(new Projectile(this.x + this.width/2, this.y + this.height/2, angle, 1900, w.dmg * this.perks.dmgMult, '#f59e0b'));
+
+            // Reverse recoil thrust
+            this.vx -= Math.cos(angle) * 110;
+            if (Math.sin(angle) > 0.4 && !this.grounded) {
+                this.vy -= 140; // Hover effect when firing down!
+            }
+
+            createParticles(this.x + this.width/2 + Math.cos(angle)*35, this.y + this.height/2 + Math.sin(angle)*35, 3, '#f97316', 180);
+            updateHUD();
+        }
+    }
+
+    shootRailgun(w) {
+        if (!gameState.adrenalineActive) w.ammo--;
+        w.cd = w.fireRate;
+        let angle = Math.atan2(mouse.worldY - (this.y + this.height/2), mouse.worldX - (this.x + this.width/2));
+
+        gameState.camera.shake = 8;
+        this.vx -= Math.cos(angle) * 450; // Heavy kickback
+
+        gameState.projectiles.push(new Projectile(
+            this.x + this.width/2, 
+            this.y + this.height/2, 
+            angle, 
+            4600, 
+            w.dmg * this.perks.dmgMult, 
+            '#22d3ee', 
+            false, 
+            false, 
+            false, 
+            { isRailgun: true, life: 0.6 }
+        ));
+
+        createParticles(this.x + this.width/2 + Math.cos(angle)*40, this.y + this.height/2 + Math.sin(angle)*40, 16, '#22d3ee', 320);
+        updateHUD();
+    }
+
+    shootCluster(w) {
+        if (!gameState.adrenalineActive) w.ammo--;
+        w.cd = w.fireRate;
+        let angle = Math.atan2(mouse.worldY - (this.y + this.height/2), mouse.worldX - (this.x + this.width/2));
+
+        this.vx -= Math.cos(angle) * 220;
+
+        gameState.projectiles.push(new Projectile(
+            this.x + this.width/2, 
+            this.y + this.height/2, 
+            angle, 
+            950, 
+            w.dmg * this.perks.dmgMult, 
+            '#f97316', 
+            false, 
+            false, 
+            false, 
+            { isCluster: true, life: 1.8 }
+        ));
+
+        createParticles(this.x + this.width/2 + Math.cos(angle)*35, this.y + this.height/2 + Math.sin(angle)*35, 8, '#f97316', 160);
+        updateHUD();
+    }
+
+    shootCryo(w) {
+        if (!gameState.adrenalineActive) w.ammo--;
+        w.cd = w.fireRate;
+        let angle = Math.atan2(mouse.worldY - (this.y + this.height/2), mouse.worldX - (this.x + this.width/2));
+        angle += (Math.random() - 0.5) * 0.15;
+
+        gameState.projectiles.push(new Projectile(
+            this.x + this.width/2, 
+            this.y + this.height/2, 
+            angle, 
+            1250, 
+            w.dmg * this.perks.dmgMult, 
+            '#38bdf8', 
+            false, 
+            false, 
+            true, 
+            { isCryo: true, life: 0.45 }
+        ));
+
+        createParticles(this.x + this.width/2 + Math.cos(angle)*25, this.y + this.height/2 + Math.sin(angle)*25, 4, '#bae6fd', 90);
         updateHUD();
     }
 

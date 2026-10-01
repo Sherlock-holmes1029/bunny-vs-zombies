@@ -10,6 +10,9 @@ export const gameState = {
     companions: [],
     barrels: [],
     barricades: [],
+    landmines: [],
+    beacons: [],
+    hazardZones: [],
     carePackages: [],
     particles: [],
     slashes: [],
@@ -26,10 +29,22 @@ export const gameState = {
     adrenalineActive: false,
     adrenalineTimer: 0,
     carePackageTimer: 30.0,
-    currentState: GameState.PLAYING,
+    gameMode: 'survival', // 'survival' | 'sandbox'
+    sandboxTime: 0,
+    sandboxBossTimer: 75.0,
+    totalKills: 0,
+    currentState: GameState.MENU,
     camera: { x: 0, y: 0, targetX: 0, targetY: 0, smoothing: 0.1, shake: 0 }
 };
 
 export function isMobileCheck() {
-    return navigator.maxTouchPoints > 0 || window.innerWidth <= 768;
+    return (
+        (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) ||
+        (typeof window !== 'undefined' && (
+            window.innerWidth <= 768 ||
+            (window.innerWidth <= 1024 && window.innerHeight <= 550) ||
+            (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)
+        ))
+    );
 }
+

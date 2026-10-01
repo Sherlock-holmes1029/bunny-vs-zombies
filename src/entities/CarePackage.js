@@ -61,15 +61,20 @@ export class CarePackage {
             createParticles(this.x + 12, this.y + 12, 15, '#fbbf24', 150);
             createFloatingText(this.x + 12, this.y - 10, `+$${gold}`, '#fbbf24');
         } else {
-            // Refills ammo
+            // Refills ammo for all equipped firearms
             let refilled = false;
-            if (player.weapons && player.weapons[player.currentWeaponIndex]) {
-                let w = player.weapons[player.currentWeaponIndex];
-                w.ammo = w.capacity;
-                refilled = true;
+            if (player.weapons) {
+                player.weapons.forEach(w => {
+                    if (w && w.id !== 'katana') {
+                        w.ammo = w.maxAmmo;
+                        w.reloading = false;
+                        w.reloadTimer = 0;
+                        refilled = true;
+                    }
+                });
             }
             createParticles(this.x + 12, this.y + 12, 15, '#3b82f6', 120);
-            createFloatingText(this.x + 12, this.y - 10, refilled ? "AMMO REFILLED" : "+AMMO", '#3b82f6');
+            createFloatingText(this.x + 12, this.y - 10, refilled ? "AMMO REFILLED!" : "+AMMO", '#3b82f6');
         }
         updateHUD();
     }
