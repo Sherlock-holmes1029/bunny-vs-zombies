@@ -137,6 +137,9 @@ export function restartCurrentMode() {
     startMode(gameState.gameMode || 'survival');
 }
 
+window.startMode = startMode;
+window.restartCurrentMode = restartCurrentMode;
+
 export function onGameResumed() {
     lastTimeRef.value = performance.now();
 }
@@ -974,3 +977,9 @@ const hudEl = document.getElementById('ui-hud');
 if (hudEl) hudEl.classList.add('hidden');
 updateDeviceUI();
 gameLoop();
+
+if (window._pendingMode) {
+    const pending = window._pendingMode;
+    window._pendingMode = null;
+    startMode(pending);
+}

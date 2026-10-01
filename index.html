@@ -19,6 +19,12 @@
                 }
             }
         }
+        window._pendingMode = null;
+        if (!window.startMode) {
+            window.startMode = function(mode) {
+                window._pendingMode = mode;
+            };
+        }
     </script>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; background-color: #030712; touch-action: none; user-select: none; -webkit-user-select: none; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -788,6 +794,6 @@
         </div>
     </div>
 
-<script type="module" src="/src/main.js"></script>
+<script type="module" src="./src/main.js"></script>
 </body>
 </html>
